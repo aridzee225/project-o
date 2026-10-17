@@ -7,9 +7,8 @@
     <title>Werewolf - Project O</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* CSS Tambahan untuk Wadah Game Iframe */
         .game-frame-container {
-            display: none; /* Tersembunyi secara default */
+            display: none;
             width: 100%;
             height: calc(100vh - 80px);
             background: #000;
@@ -56,7 +55,7 @@
         </nav>
     </header>
 
-    <!-- WADAH IFRAME GAME (Muncul saat tombol START GAME diklik) -->
+    <!-- WADAH IFRAME GAME -->
     <div id="gameContainer" class="game-frame-container">
         <button id="closeGameBtn" class="close-game-btn">✕ Keluar Game</button>
         <iframe 
@@ -81,7 +80,6 @@
                 </p>
 
                 <div class="werewolf-actions">
-                    <!-- Ditambahkan ID "startGameBtn" -->
                     <button id="startGameBtn" class="btn">START GAME</button>
                     <a href="games.html" class="back-btn">← BACK TO GAMES</a>
                 </div>
@@ -120,13 +118,13 @@
         <p>PLAY • THINK • SURVIVE</p>
     </footer>
 
-    <!-- SCRIPT HUBUNGKAN TOMBOL START GAME KE TAB BARU -->
+    <!-- SCRIPT HUBUNGKAN TOMBOL START GAME -->
     <script>
         const startGameBtn = document.getElementById('startGameBtn');
 
-        // Masukkan URL Forwarded Address dari Port 3000 atau 3001 kamu
-        // Contoh: 'https://xxxx-3001.app.github.dev' atau 'http://localhost:3001'
-       const GAME_URL = 'https://cautious-carnival-gx447g575x67c76x-3001.app.github.dev/';
+        // Menggunakan relative path agar otomatis menyesuaikan domain hosting Vercel
+        const GAME_URL = window.location.origin + '/games/werewolf/index.html'; 
+
         function getPlayerUsername() {
             try {
                 const userSession = localStorage.getItem('supabase.auth.token');
@@ -143,10 +141,9 @@
         if (startGameBtn) {
             startGameBtn.addEventListener('click', () => {
                 const username = getPlayerUsername();
-                const cleanUrl = GAME_URL.replace(/\/$/, "");
-                const targetUrl = `${cleanUrl}?username=${encodeURIComponent(username)}`;
+                const targetUrl = `${GAME_URL}?username=${encodeURIComponent(username)}`;
 
-                // Buka game di tab baru secara langsung (bebas blokir iframe!)
+                // Buka game Werewolf Vite di tab baru
                 window.open(targetUrl, '_blank');
             });
         }
