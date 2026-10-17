@@ -123,6 +123,9 @@
     document.addEventListener("DOMContentLoaded", function () {
         const startGameBtn = document.getElementById('startGameBtn');
 
+        // Ganti URL ini dengan domain Vercel game baru kamu
+        const GAME_URL = 'https://project-o-werewolf.vercel.app';
+
         function getPlayerUsername() {
             try {
                 const userSession = localStorage.getItem('supabase.auth.token');
@@ -132,27 +135,17 @@
                         return parsed.currentSession.user.user_metadata.full_name;
                     }
                 }
-            } catch (e) {
-                console.error("Error reading username:", e);
-            }
+            } catch (e) {}
             return 'Player_' + Math.floor(1000 + Math.random() * 9000);
         }
 
         if (startGameBtn) {
             startGameBtn.addEventListener('click', function (e) {
-                e.preventDefault(); // Mencegah reload halaman secara acak
-                
+                e.preventDefault();
                 const username = getPlayerUsername();
-                // Arahkan langsung menggunakan route relatif
-                const targetUrl = './games/werewolf/index.html?username=' + encodeURIComponent(username);
-                
-                console.log("Navigating to:", targetUrl);
-                
-                // Gunakan location.href agar pasti berpindah tanpa diblokir pop-up blocker
+                const targetUrl = GAME_URL + '?username=' + encodeURIComponent(username);
                 window.location.href = targetUrl;
             });
-        } else {
-            console.error("Tombol startGameBtn tidak ditemukan!");
         }
     });
     </script>
