@@ -11,7 +11,10 @@ import {
   PawPrint, HeartPulse, Gavel, Hourglass, Clock
 } from 'lucide-react';
 
-const socket: Socket = io();
+const socket: Socket = io('https://cautious-carnival-gx447g575x67c76x-3000.app.github.dev/', {
+  transports: ['websocket', 'polling'],
+  secure: true
+});
 
 export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
