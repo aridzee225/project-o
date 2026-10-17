@@ -4,152 +4,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Werewolf - Project O</title>
-
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS Tambahan untuk Wadah Game Iframe */
+        .game-frame-container {
+            display: none; /* Tersembunyi secara default */
+            width: 100%;
+            height: calc(100vh - 80px);
+            background: #000;
+            position: relative;
+        }
+
+        .game-frame-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .close-game-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #ff4757;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .close-game-btn:hover {
+            background: #ff6b81;
+        }
+    </style>
 </head>
 
 <body>
 
     <!-- NAVBAR -->
-
     <header class="navbar">
-
         <div class="logo">
             PROJECT <span>O</span>
         </div>
-
         <nav>
-
-            <a href="index.html">
-                Home
-            </a>
-
-            <a href="games.html" class="active">
-                Games
-            </a>
-
-            <a href="#">
-                About
-            </a>
-
+            <a href="index.html">Home</a>
+            <a href="games.html" class="active">Games</a>
+            <a href="#">About</a>
         </nav>
-
     </header>
 
+    <!-- WADAH IFRAME GAME (Muncul saat tombol START GAME diklik) -->
+    <div id="gameContainer" class="game-frame-container">
+        <button id="closeGameBtn" class="close-game-btn">✕ Keluar Game</button>
+        <iframe 
+            id="werewolfGameIframe" 
+            src="" 
+            title="Werewolf Game"
+            allow="autoplay; microphone"
+        ></iframe>
+    </div>
 
-    <!-- WEREWOLF HERO -->
+    <!-- MAIN CONTENT / LANDING PAGE -->
+    <main id="mainContent">
 
-    <main>
-
+        <!-- WEREWOLF HERO -->
         <section class="werewolf-hero">
-
             <div class="werewolf-content">
-
-                <p class="section-label">
-                    PROJECT O / GAME 01
-                </p>
-
-                <h1>
-                    WERE<br>
-                    <span>WOLF</span>
-                </h1>
-
+                <p class="section-label">PROJECT O / GAME 01</p>
+                <h1>WERE<br><span>WOLF</span></h1>
                 <p class="werewolf-description">
-                    Sebuah permainan social deduction
-                    di mana kepercayaan, kebohongan,
-                    dan strategi menentukan siapa yang
-                    akan bertahan sampai akhir.
+                    Sebuah permainan social deduction di mana kepercayaan, kebohongan,
+                    dan strategi menentukan siapa yang akan bertahan sampai akhir.
                 </p>
 
                 <div class="werewolf-actions">
-
-                    <button class="btn">
-                        START GAME
-                    </button>
-
-                    <a href="games.html" class="back-btn">
-                        ← BACK TO GAMES
-                    </a>
-
+                    <!-- Ditambahkan ID "startGameBtn" -->
+                    <button id="startGameBtn" class="btn">START GAME</button>
+                    <a href="games.html" class="back-btn">← BACK TO GAMES</a>
                 </div>
-
             </div>
-
 
             <!-- DECORATION -->
-
             <div class="werewolf-decoration">
-
                 <div class="wolf-circle"></div>
-
                 <div class="wolf-line wolf-line-one"></div>
-
                 <div class="wolf-line wolf-line-two"></div>
-
-                <div class="wolf-number">
-                    01
-                </div>
-
+                <div class="wolf-number">01</div>
             </div>
-
         </section>
 
-
         <!-- GAME INFO -->
-
         <section class="werewolf-info">
-
             <div class="info-block">
-
-                <p class="section-label">
-                    ABOUT THE GAME
-                </p>
-
-                <h2>
-                    TRUST<br>
-                    NO ONE.
-                </h2>
-
+                <p class="section-label">ABOUT THE GAME</p>
+                <h2>TRUST<br>NO ONE.</h2>
             </div>
-
-
             <div class="info-description">
-
                 <p>
-                    Werewolf adalah permainan deduksi sosial
-                    yang mempertemukan pemain dengan peran
-                    yang berbeda.
+                    Werewolf adalah permainan deduksi sosial yang mempertemukan pemain dengan peran yang berbeda.
                 </p>
-
                 <p>
-                    Beberapa pemain harus menyembunyikan
-                    identitas mereka, sementara pemain lainnya
-                    harus menemukan siapa yang berbohong.
+                    Beberapa pemain harus menyembunyikan identitas mereka, sementara pemain lainnya harus menemukan siapa yang berbohong.
                 </p>
-
             </div>
-
         </section>
 
     </main>
 
-
     <!-- FOOTER -->
-
     <footer>
-
-        <p>
-            © 2026 PROJECT O
-        </p>
-
-        <p>
-            PLAY • THINK • SURVIVE
-        </p>
-
+        <p>© 2026 PROJECT O</p>
+        <p>PLAY • THINK • SURVIVE</p>
     </footer>
 
+    <!-- SCRIPT HUBUNGKAN TOMBOL START GAME KE TAB BARU -->
+    <script>
+        const startGameBtn = document.getElementById('startGameBtn');
+
+        // Masukkan URL Forwarded Address dari Port 3000 atau 3001 kamu
+        // Contoh: 'https://xxxx-3001.app.github.dev' atau 'http://localhost:3001'
+       const GAME_URL = 'https://cautious-carnival-gx447g575x67c76x-3001.app.github.dev/';
+        function getPlayerUsername() {
+            try {
+                const userSession = localStorage.getItem('supabase.auth.token');
+                if (userSession) {
+                    const parsed = JSON.parse(userSession);
+                    if (parsed?.currentSession?.user?.user_metadata?.full_name) {
+                        return parsed.currentSession.user.user_metadata.full_name;
+                    }
+                }
+            } catch (e) {}
+            return 'Player_' + Math.floor(1000 + Math.random() * 9000);
+        }
+
+        if (startGameBtn) {
+            startGameBtn.addEventListener('click', () => {
+                const username = getPlayerUsername();
+                const cleanUrl = GAME_URL.replace(/\/$/, "");
+                const targetUrl = `${cleanUrl}?username=${encodeURIComponent(username)}`;
+
+                // Buka game di tab baru secara langsung (bebas blokir iframe!)
+                window.open(targetUrl, '_blank');
+            });
+        }
+    </script>
 
 </body>
 
