@@ -120,33 +120,33 @@
 
     <!-- SCRIPT HUBUNGKAN TOMBOL START GAME -->
     <script>
-        const startGameBtn = document.getElementById('startGameBtn');
+    const startGameBtn = document.getElementById('startGameBtn');
 
-        // Menggunakan relative path agar otomatis menyesuaikan domain hosting Vercel
-        const GAME_URL = window.location.origin + '/games/werewolf/index.html'; 
+    // Mengarah langsung ke route folder game Werewolf
+    const GAME_URL = window.location.origin + '/games/werewolf/';
 
-        function getPlayerUsername() {
-            try {
-                const userSession = localStorage.getItem('supabase.auth.token');
-                if (userSession) {
-                    const parsed = JSON.parse(userSession);
-                    if (parsed?.currentSession?.user?.user_metadata?.full_name) {
-                        return parsed.currentSession.user.user_metadata.full_name;
-                    }
+    function getPlayerUsername() {
+        try {
+            const userSession = localStorage.getItem('supabase.auth.token');
+            if (userSession) {
+                const parsed = JSON.parse(userSession);
+                if (parsed?.currentSession?.user?.user_metadata?.full_name) {
+                    return parsed.currentSession.user.user_metadata.full_name;
                 }
-            } catch (e) {}
-            return 'Player_' + Math.floor(1000 + Math.random() * 9000);
-        }
+            }
+        } catch (e) {}
+        return 'Player_' + Math.floor(1000 + Math.random() * 9000);
+    }
 
-        if (startGameBtn) {
-            startGameBtn.addEventListener('click', () => {
-                const username = getPlayerUsername();
-                const targetUrl = `${GAME_URL}?username=${encodeURIComponent(username)}`;
+    if (startGameBtn) {
+        startGameBtn.addEventListener('click', () => {
+            const username = getPlayerUsername();
+            const targetUrl = `${GAME_URL}?username=${encodeURIComponent(username)}`;
 
-                // Buka game Werewolf Vite di tab baru
-                window.open(targetUrl, '_blank');
-            });
-        }
+            // Buka game Werewolf di tab baru
+            window.open(targetUrl, '_blank');
+        });
+    }
     </script>
 
 </body>
