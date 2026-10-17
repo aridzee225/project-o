@@ -120,33 +120,41 @@
 
     <!-- SCRIPT HUBUNGKAN TOMBOL START GAME -->
     <script>
-    const startGameBtn = document.getElementById('startGameBtn');
+    document.addEventListener("DOMContentLoaded", function () {
+        const startGameBtn = document.getElementById('startGameBtn');
 
-    // Mengarah langsung ke route folder game Werewolf
-    const GAME_URL = window.location.origin + '/games/werewolf/';
-
-    function getPlayerUsername() {
-        try {
-            const userSession = localStorage.getItem('supabase.auth.token');
-            if (userSession) {
-                const parsed = JSON.parse(userSession);
-                if (parsed?.currentSession?.user?.user_metadata?.full_name) {
-                    return parsed.currentSession.user.user_metadata.full_name;
+        function getPlayerUsername() {
+            try {
+                const userSession = localStorage.getItem('supabase.auth.token');
+                if (userSession) {
+                    const parsed = JSON.parse(userSession);
+                    if (parsed?.currentSession?.user?.user_metadata?.full_name) {
+                        return parsed.currentSession.user.user_metadata.full_name;
+                    }
                 }
+            } catch (e) {
+                console.error("Error reading username:", e);
             }
-        } catch (e) {}
-        return 'Player_' + Math.floor(1000 + Math.random() * 9000);
-    }
+            return 'Player_' + Math.floor(1000 + Math.random() * 9000);
+        }
 
-    if (startGameBtn) {
-        startGameBtn.addEventListener('click', () => {
-            const username = getPlayerUsername();
-            const targetUrl = `${GAME_URL}?username=${encodeURIComponent(username)}`;
-
-            // Buka game Werewolf di tab baru
-            window.open(targetUrl, '_blank');
-        });
-    }
+        if (startGameBtn) {
+            startGameBtn.addEventListener('click', function (e) {
+                e.preventDefault(); // Mencegah reload halaman secara acak
+                
+                const username = getPlayerUsername();
+                // Arahkan langsung menggunakan route relatif
+                const targetUrl = './games/werewolf/index.html?username=' + encodeURIComponent(username);
+                
+                console.log("Navigating to:", targetUrl);
+                
+                // Gunakan location.href agar pasti berpindah tanpa diblokir pop-up blocker
+                window.location.href = targetUrl;
+            });
+        } else {
+            console.error("Tombol startGameBtn tidak ditemukan!");
+        }
+    });
     </script>
 
 </body>
