@@ -11,7 +11,8 @@ import {
   PawPrint, HeartPulse, Gavel, Hourglass, Clock
 } from 'lucide-react';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://cautious-carnival-gx447g575x67c76x-3000.app.github.dev';
+// Ganti URL fallback Codespaces dengan URL Railway kamu
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://project-o-production.up.railway.app';
 
 const socket: Socket = io(SOCKET_URL, {
   transports: ['websocket', 'polling'],
