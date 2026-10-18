@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import io, { Socket } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import { GameRoom, UserProfile } from './shared/types';
 import { calculateLevelFromStats } from './shared/leveling';
 import { soundFx } from './utils/audio';
@@ -11,9 +11,6 @@ import {
   PawPrint, HeartPulse, Gavel, Hourglass, Clock
 } from 'lucide-react';
 
-// Ganti URL fallback Codespaces dengan URL Railway kamu
-import { io, Socket } from "socket.io-client";
-
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://project-o-production.up.railway.app';
 
 export const socket: Socket = io(SOCKET_URL, {
@@ -21,6 +18,8 @@ export const socket: Socket = io(SOCKET_URL, {
   autoConnect: true,
   withCredentials: false
 });
+
+// Lanjutkan dengan 'export default function App() { ... }' atau sisa komponen kamu di bawah ini
 
 export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
