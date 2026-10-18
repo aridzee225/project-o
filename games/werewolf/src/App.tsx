@@ -184,27 +184,40 @@ export default function App() {
   };
 
   const handleCreateRoom = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!profile) return;
-    socket.emit('create_room', {
-      userId: profile.id,
-      username: profile.username,
-      roomName: newRoomName.trim() || `Desa ${profile.username}`,
-      settings: {
-        timerEnabled,
-        discussionTime: customDiscussionTime,
-        votingTime: customVotingTime,
-        nightTime: customNightTime
-      }
-    }, (res: any) => {
-      if (res.success) {
-        showToast(`Desa ${res.roomId} berhasil dibuat!`);
-        setNewRoomName('');
-      } else {
-        setError(res.error || 'Gagal membuat room.');
-      }
-    });
-  };
+  if (e) e.preventDefault();
+
+  // 1. Ambil username dari input jika profile belum diset
+  const activeUsername = profile?.username || usernameInput.trim();
+  const activeUserId = profile?.id || `user_${Math.random().toString(36).substring(2, 9)}`;
+
+  if (!activeUsername) {
+    setError('Masukkan nama pemain terlebih dahulu!');
+    return;
+  }
+
+  console.log('Mengirim event create_room ke Railway...', { activeUsername });
+
+  // 2. Kirim data ke Railway
+  socket.emit('create_room', {
+    userId: activeUserId,
+    username: activeUsername,
+    roomName: newRoomName.trim() || `Desa ${activeUsername}`,
+    settings: {
+      timerEnabled,
+      discussionTime: customDiscussionTime,
+      votingTime: customVotingTime,
+      nightTime: customNightTime
+    }
+  }, (res: any) => {
+    console.log('Respon dari server Railway:', res);
+    if (res && res.success) {
+      showToast(`Desa ${res.roomId} berhasil dibuat!`);
+      setNewRoomName('');
+    } else {
+      setError(res?.error || 'Gagal membuat room.');
+    }
+  });
+};
 
   const handleSaveSettings = () => {
     if (!room) return;
