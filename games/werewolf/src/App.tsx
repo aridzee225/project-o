@@ -14,9 +14,10 @@ import {
 // Ganti URL fallback Codespaces dengan URL Railway kamu
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://project-o-production.up.railway.app';
 
-const socket: Socket = io(SOCKET_URL, {
-  transports: ['websocket', 'polling'],
-  secure: true
+export const socket = io(SOCKET_URL, {
+  transports: ['polling', 'websocket'], // Utamakan polling terlebih dahulu agar handshake berhasil
+  autoConnect: true,
+  withCredentials: false
 });
 
 export default function App() {

@@ -12,9 +12,11 @@ async function startServer() {
   // Setup Socket.IO
   const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // atau origin lain
-    methods: ["GET", "POST"]
-  }
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: false
+  },
+  transports: ['polling', 'websocket'] // Izinkan transport polling & websocket
 });
 
   // Initialize Game Logic
