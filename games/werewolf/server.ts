@@ -10,9 +10,12 @@ async function startServer() {
   const PORT = Number(process.env.PORT ?? 3000);
   
   // Setup Socket.IO
-  const io = new Server(server, { 
-    cors: { origin: '*' }
-  });
+  const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // atau origin lain
+    methods: ["GET", "POST"]
+  }
+});
 
   // Initialize Game Logic
   initGameServer(io);
