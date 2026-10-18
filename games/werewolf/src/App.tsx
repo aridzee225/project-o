@@ -12,10 +12,12 @@ import {
 } from 'lucide-react';
 
 // Ganti URL fallback Codespaces dengan URL Railway kamu
+import { io, Socket } from "socket.io-client";
+
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://project-o-production.up.railway.app';
 
-export const socket = io(SOCKET_URL, {
-  transports: ['polling', 'websocket'], // Utamakan polling terlebih dahulu agar handshake berhasil
+export const socket: Socket = io(SOCKET_URL, {
+  transports: ['polling', 'websocket'],
   autoConnect: true,
   withCredentials: false
 });
