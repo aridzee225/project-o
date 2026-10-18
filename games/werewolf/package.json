@@ -7,7 +7,7 @@
     "dev": "vite",
     "server": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=esm --packages=external --outdir=.",
-    "start": "node server.js",
+    "start": "tsx server.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "clean": "rm -rf dist server.js",
@@ -27,6 +27,7 @@
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",
     "tailwind-merge": "^3.7.0",
+    "tsx": "^4.21.0",
     "uuid": "^14.0.2",
     "vite": "^8.3.0"
   },
@@ -39,7 +40,6 @@
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.28.0",
     "tailwindcss": "^4.3.3",
-    "tsx": "^4.21.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"
   }
