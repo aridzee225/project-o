@@ -4,13 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-  "dev": "vite",
-  "server": "tsx server.ts",
-  "build": "vite build",
-  "postinstall": "npm run build",
-  "start": "tsx server.ts"
-}
-
+    "dev": "vite",
+    "build": "vite build",
+    "start": "tsx server.ts"
+  },
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.3.3",
