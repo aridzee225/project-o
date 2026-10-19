@@ -57,41 +57,29 @@ export default function App() {
 
   // Detect query params from parent website (e.g. ?username=Adit&roomId=DESA-1234)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const accountName = urlParams.get('username') || urlParams.get('name') || urlParams.get('user') || urlParams.get('account');
-    const autoRoomId = urlParams.get('roomId') || urlParams.get('room');
+  const urlParams = new URLSearchParams(window.location.search);
+  const accountName = urlParams.get('username') || urlParams.get('name') || urlParams.get('user') || urlParams.get('account');
+  const autoRoomId = urlParams.get('roomId') || urlParams.get('room');
 
-    if (accountName && !profile) {
-      const cleanAccount = accountName.trim();
-      setUsernameInput(cleanAccount);
-      socket.emit('register', { username: cleanAccount, isExternal: true }, (prof: UserProfile) => {
-        setProfile(prof);
-        showToast(`Akun website terhubung: ${prof.username}`);
-        if (autoRoomId) {
-          handleJoinRoomWithId(autoRoomId.trim(), prof);
-        }
-      });
+  // JIKA ADA PARAMETER NAMA: Cukup isikan ke kolom input, JANGAN langsung socket.emit register!
+  if (accountName && !profile) {
+    const cleanAccount = accountName.trim();
+    setUsernameInput(cleanAccount);
+  }
+
+  // Listen to postMessage from parent website iframe (Tetap dipertahankan jika pakai iframe)
+  const messageListener = (event: MessageEvent) => {
+    if (event.data?.type === 'WEREWOLF_AUTH' && event.data?.username) {
+      const cleanName = event.data.username.trim();
+      setUsernameInput(cleanName);
     }
+  };
 
-    // Listen to postMessage from parent website iframe
-    const messageListener = (event: MessageEvent) => {
-      if (event.data?.type === 'WEREWOLF_AUTH' && event.data?.username) {
-        const cleanName = event.data.username.trim();
-        socket.emit('register', { username: cleanName, isExternal: true }, (prof: UserProfile) => {
-          setProfile(prof);
-          showToast(`Akun terautentikasi: ${prof.username}`);
-          if (event.data?.roomId) {
-            handleJoinRoomWithId(event.data.roomId.trim(), prof);
-          }
-        });
-      }
-    };
-
-    window.addEventListener('message', messageListener);
-    return () => window.removeEventListener('message', messageListener);
-  }, []);
+  window.addEventListener('message', messageListener);
+  return () => window.removeEventListener('message', messageListener);
+}, []);
 
   // Initialize socket listeners
   useEffect(() => {
