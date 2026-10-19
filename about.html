@@ -9,30 +9,83 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <style>
-        /* Gaya tambahan khusus tombol Beranda yang menonjol di luar kotak */
+        /* Penataan ulang agar halaman About lebih proporsional & tidak sepi */
+        .profile {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* Ukuran judul dibuat lebih pas / tidak terlalu raksasa */
+        .profile h2 {
+            font-size: 2rem;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+            color: #f8fafc;
+            border-left: 4px solid #38bdf8;
+            padding-left: 12px;
+        }
+
+        .section-label {
+            font-size: 0.85rem;
+            color: #38bdf8;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .profile-card {
+            background: linear-gradient(145deg, #12151c, #181c25);
+            border: 1px solid #252833;
+            border-radius: 14px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+        }
+
+        .profile-card p {
+            color: #cbd5e1;
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .profile-card p strong {
+            color: #f8fafc;
+        }
+
+        .profile-card ul {
+            margin: 15px 0 0 20px;
+            color: #cbd5e1;
+            line-height: 1.7;
+        }
+
+        .profile-card li {
+            margin-bottom: 10px;
+        }
+
         .back-home-container {
-            max-width: 800px;
-            margin: 20px auto 40px auto;
+            margin-top: 20px;
             text-align: left;
         }
 
         .btn-menonjol {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
+            gap: 10px;
+            padding: 12px 26px;
             background: linear-gradient(135deg, #38bdf8, #0284c7);
             color: #0f172a;
             font-weight: bold;
             text-decoration: none;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
             transition: all 0.3s ease;
         }
 
         .btn-menonjol:hover {
             background: linear-gradient(135deg, #0ea5e9, #0369a1);
-            box-shadow: 0 6px 16px rgba(56, 189, 248, 0.6);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
             transform: translateY(-2px);
         }
     </style>
@@ -74,21 +127,26 @@
             </p>
             <h2>ABOUT PROJECT O</h2>
 
-            <!-- Kotak Konten Utama (Isi Selamat Datang / Teks) -->
+            <!-- Kotak Konten Utama -->
             <div class="profile-card">
-                <p>Selamat datang di <strong>Project O</strong>! Ini adalah platform website portal game interaktif yang berisikan berbagai macam koleksi permainan papan (*board games*) seru yang bisa dimainkan bersama.</p>
+                <p>
+                    Selamat datang di <strong>Project O</strong>! Ini adalah platform website portal game interaktif yang berisikan berbagai macam koleksi permainan papan <em>(board games)</em> seru yang bisa dimainkan bersama teman-teman secara online maupun langsung.
+                </p>
                 
-                <p>Proyek ini dikembangkan secara kolaboratif untuk menghadirkan pengalaman bermain game digital yang ringan, menarik, dan mudah diakses.</p>
+                <p>
+                    Proyek ini dikembangkan secara kolaboratif untuk menghadirkan pengalaman bermain game digital yang ringan, menarik, responsif, dan mudah diakses oleh siapa saja.
+                </p>
                 
-                <p><strong>Fitur Utama:</strong></p>
+                <p><strong>Fitur Utama Platform:</strong></p>
                 <ul>
                     <li>Kumpulan mini-game dan board game digital interaktif.</li>
-                    <li>Antarmuka yang bersih dan ramah pengguna.</li>
+                    <li>Antarmuka yang bersih, modern, dan ramah pengguna.</li>
+                    <li>Sistem akun dan profil pemain yang terintegrasi dengan aman.</li>
                     <li>Terus dikembangkan secara berkala bersama tim pengembang.</li>
                 </ul>
             </div>
 
-            <!-- Tombol Kembali ke Beranda (Di Luar Kotak & Menonjol) -->
+            <!-- Tombol Kembali ke Beranda -->
             <div class="back-home-container">
                 <a href="index.html" class="btn-menonjol">
                     ← Kembali ke Beranda
@@ -98,7 +156,7 @@
     </main>
 
     <footer>
-        <p>© 2026 Project O</p>
+        <p>© 2026 Project O • Play • Think • Survive</p>
     </footer>
 
     <!-- SCRIPT UNTUK MENU HAMBURGER & LOGOUT -->
