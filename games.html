@@ -173,7 +173,7 @@
     </main>
 
 
-    <!-- FOOTER -->
+   <!-- FOOTER -->
     <footer>
 
         <p>
@@ -186,48 +186,49 @@
 
     </footer>
 
+    <!-- SCRIPT UTAMA & SUPABASE AUTH -->
     <script src="script.js?v=2"></script>
 
-    <!-- SCRIPT UNTUK MENU HAMBURGER & LOGOUT -->
+    <!-- SCRIPT UNTUK MEMASTIKAN MENU HAMBURGER & LOGOUT BERFUNGSI -->
     <script>
-        const menuToggle = document.getElementById("menuToggle");
-        const menuDropdown = document.getElementById("menuDropdown");
-        const logoutBtn = document.getElementById("logoutBtn");
+        document.addEventListener("DOMContentLoaded", () => {
+            const menuToggle = document.getElementById("menuToggle");
+            const menuDropdown = document.getElementById("menuDropdown");
+            const logoutBtn = document.getElementById("logoutBtn");
 
-        // Buka / tutup menu
-        if (menuToggle && menuDropdown) {
-            menuToggle.addEventListener("click", function (event) {
-                event.stopPropagation();
-                menuDropdown.classList.toggle("show");
-            });
-        }
-
-        // Logout
-        if (logoutBtn) {
-            logoutBtn.addEventListener("click", async function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                const { error } = await supabaseClient.auth.signOut();
-
-                if (error) {
-                    alert("Gagal logout: " + error.message);
-                    return;
-                }
-
-                window.location.href = "login.html";
-            });
-        }
-
-        // Tutup menu jika klik di luar
-        document.addEventListener("click", function (event) {
             if (menuToggle && menuDropdown) {
-                if (
-                    !menuToggle.contains(event.target) &&
-                    !menuDropdown.contains(event.target)
-                ) {
-                    menuDropdown.classList.remove("show");
-                }
+                // Hapus event listener lama jika ada (mencegah double click)
+                const newToggle = menuToggle.cloneNode(true);
+                menuToggle.parentNode.replaceChild(newToggle, menuToggle);
+
+                newToggle.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    menuDropdown.classList.toggle("show");
+                });
+
+                // Tutup dropdown jika mengklik di luar area menu
+                document.addEventListener("click", function (event) {
+                    if (!newToggle.contains(event.target) && !menuDropdown.contains(event.target)) {
+                        menuDropdown.classList.remove("show");
+                    }
+                });
+            }
+
+            // Fungsi Logout tambahan jika diperlukan
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", async function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (typeof supabaseClient !== 'undefined') {
+                        const { error } = await supabaseClient.auth.signOut();
+                        if (error) {
+                            alert("Gagal logout: " + error.message);
+                            return;
+                        }
+                    }
+                    window.location.href = "login.html";
+                });
             }
         });
     </script>
