@@ -11,39 +11,67 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <style>
+        /* Gaya tambahan khusus tombol Beranda yang menonjol di luar grid game */
+        .back-home-container {
+            max-width: 1200px;
+            margin: 40px auto 20px auto;
+            padding: 0 20px;
+            text-align: left;
+        }
+
+        .btn-menonjol {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: #0f172a;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-menonjol:hover {
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            box-shadow: 0 6px 16px rgba(56, 189, 248, 0.6);
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 
 <body>
 
-        <!-- NAVBAR -->
-<header class="navbar">
-    <div class="logo">
-        PROJECT <span>O</span>
-    </div>
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="logo">
+            PROJECT <span>O</span>
+        </div>
 
-    <div class="menu-wrapper">
-        <button class="menu-toggle" id="menuToggle" aria-label="Buka menu">
-            ☰
-        </button>
-
-        <nav class="menu-dropdown" id="menuDropdown">
-            <a href="index.html">Home</a>
-            <a href="games.html">Games</a>
-            <a href="about.html" class="nav-link">About</a>
-            <a href="profile.html">Profile</a>
-
-            <div class="menu-divider"></div>
-
-            <button id="logoutBtn" class="logout-btn">
-                Logout
+        <div class="menu-wrapper">
+            <button class="menu-toggle" id="menuToggle" aria-label="Buka menu">
+                ☰
             </button>
-        </nav>
-    </div>
-</header>
+
+            <nav class="menu-dropdown" id="menuDropdown">
+                <a href="index.html">Home</a>
+                <a href="games.html">Games</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="profile.html">Profile</a>
+
+                <div class="menu-divider"></div>
+
+                <button id="logoutBtn" class="logout-btn">
+                    Logout
+                </button>
+            </nav>
+        </div>
+    </header>
 
 
     <!-- GAME LIBRARY -->
-
     <main>
 
         <section class="games-page">
@@ -69,9 +97,7 @@
 
             <div class="game-grid">
 
-
                 <!-- WEREWOLF -->
-
                 <article class="game-card">
 
                     <div class="game-number">
@@ -104,7 +130,6 @@
 
 
                 <!-- COMING SOON -->
-
                 <article class="game-card coming-soon">
 
                     <div class="game-number">
@@ -134,7 +159,13 @@
 
                 </article>
 
+            </div>
 
+            <!-- Tombol Kembali ke Beranda (Di Luar Grid & Menonjol) -->
+            <div class="back-home-container">
+                <a href="index.html" class="btn-menonjol">
+                    ← Kembali ke Beranda
+                </a>
             </div>
 
         </section>
@@ -143,7 +174,6 @@
 
 
     <!-- FOOTER -->
-
     <footer>
 
         <p>
@@ -158,6 +188,49 @@
 
     <script src="script.js?v=2"></script>
 
+    <!-- SCRIPT UNTUK MENU HAMBURGER & LOGOUT -->
+    <script>
+        const menuToggle = document.getElementById("menuToggle");
+        const menuDropdown = document.getElementById("menuDropdown");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        // Buka / tutup menu
+        if (menuToggle && menuDropdown) {
+            menuToggle.addEventListener("click", function (event) {
+                event.stopPropagation();
+                menuDropdown.classList.toggle("show");
+            });
+        }
+
+        // Logout
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", async function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const { error } = await supabaseClient.auth.signOut();
+
+                if (error) {
+                    alert("Gagal logout: " + error.message);
+                    return;
+                }
+
+                window.location.href = "login.html";
+            });
+        }
+
+        // Tutup menu jika klik di luar
+        document.addEventListener("click", function (event) {
+            if (menuToggle && menuDropdown) {
+                if (
+                    !menuToggle.contains(event.target) &&
+                    !menuDropdown.contains(event.target)
+                ) {
+                    menuDropdown.classList.remove("show");
+                }
+            }
+        });
+    </script>
 
 </body>
 </html>

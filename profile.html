@@ -4,59 +4,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Profile - Project O</title>
-
     <link rel="stylesheet" href="style.css">
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <style>
+        /* Gaya tambahan khusus tombol Beranda yang menonjol di luar kotak */
+        .back-home-container {
+            max-width: 800px;
+            margin: 20px auto 40px auto;
+            text-align: left;
+        }
+
+        .btn-menonjol {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: #0f172a;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-menonjol:hover {
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            box-shadow: 0 6px 16px rgba(56, 189, 248, 0.6);
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 
 <body>
 
+    <!-- NAVBAR -->
     <header class="navbar">
-    <div class="logo">
-        PROJECT <span>O</span>
-    </div>
+        <div class="logo">
+            PROJECT <span>O</span>
+        </div>
 
-    <div class="menu-wrapper">
-        <button class="menu-toggle" id="menuToggle" aria-label="Buka menu">
-            ☰
-        </button>
-
-        <nav class="menu-dropdown" id="menuDropdown">
-            <a href="index.html">Home</a>
-            <a href="games.html">Games</a>
-           <a href="about.html" class="nav-link">About</a>
-            <a href="profile.html">Profile</a>
-
-            <div class="menu-divider"></div>
-
-            <button id="logoutBtn" class="logout-btn">
-                Logout
+        <div class="menu-wrapper">
+            <button class="menu-toggle" id="menuToggle" aria-label="Buka menu">
+                ☰
             </button>
-        </nav>
-    </div>
-</header>
 
+            <nav class="menu-dropdown" id="menuDropdown">
+                <a href="index.html">Home</a>
+                <a href="games.html">Games</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="profile.html">Profile</a>
 
+                <div class="menu-divider"></div>
+
+                <button id="logoutBtn" class="logout-btn">
+                    Logout
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- KONTEN UTAMA PROFILE -->
     <main>
-
         <section class="profile">
-
             <p class="section-label">
                 PLAYER PROFILE
             </p>
 
             <h2>PROFILE</h2>
 
+            <!-- Kotak Kartu Profil -->
             <div class="profile-card">
-
                 <p>
                     <strong>Username</strong>
                 </p>
-
                 <p id="username">
                     Loading...
                 </p>
@@ -64,7 +87,6 @@
                 <p>
                     <strong>Display Name</strong>
                 </p>
-
                 <p id="displayName">
                     Loading...
                 </p>
@@ -72,37 +94,40 @@
                 <p>
                     <strong>Email</strong>
                 </p>
-
                 <p id="email">
                     Loading...
                 </p>
+            </div>
 
+            <!-- Tombol Kembali ke Beranda (Di Luar Kotak & Menonjol) -->
+            <div class="back-home-container">
+                <a href="index.html" class="btn-menonjol">
+                    ← Kembali ke Beranda
+                </a>
             </div>
 
         </section>
-
     </main>
-
 
     <footer>
         <p>© 2026 Project O</p>
     </footer>
 
-
     <script src="profile.js"></script>
 
+    <!-- SCRIPT UNTUK MENU HAMBURGER & LOGOUT -->
     <script>
         const menuToggle = document.getElementById("menuToggle");
         const menuDropdown = document.getElementById("menuDropdown");
         const logoutBtn = document.getElementById("logoutBtn");
 
-    // Buka / tutup menu
+        // Buka / tutup menu
         menuToggle.addEventListener("click", function (event) {
             event.stopPropagation();
             menuDropdown.classList.toggle("show");
         });
 
-    // Logout
+        // Logout
         logoutBtn.addEventListener("click", async function (event) {
             event.preventDefault();
             event.stopPropagation();
@@ -117,7 +142,7 @@
             window.location.href = "login.html";
         });
 
-    // Tutup menu jika klik di luar
+        // Tutup menu jika klik di luar
         document.addEventListener("click", function (event) {
             if (
                 !menuToggle.contains(event.target) &&
