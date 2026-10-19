@@ -9,30 +9,159 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <style>
-        /* Gaya tambahan khusus tombol Beranda yang menonjol di luar kotak */
+        .profile {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .profile h2 {
+            font-size: 2rem;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+            color: #f8fafc;
+            border-left: 4px solid #38bdf8;
+            padding-left: 12px;
+        }
+
+        .section-label {
+            font-size: 0.85rem;
+            color: #38bdf8;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .profile-card {
+            background: linear-gradient(145deg, #12151c, #181c25);
+            border: 1px solid #252833;
+            border-radius: 14px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+        }
+
+        .profile-avatar-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #252833;
+        }
+
+        /* Area Avatar dengan efek hover untuk unggah foto */
+        .avatar-wrapper {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .avatar-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #0f172a;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+            text-transform: uppercase;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #38bdf8;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-wrapper:hover .avatar-overlay {
+            opacity: 1;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 0.75rem;
+            color: #38bdf8;
+            text-align: center;
+            font-weight: bold;
+            padding: 5px;
+        }
+
+        .avatar-info h3 {
+            color: #f8fafc;
+            font-size: 1.25rem;
+            margin-bottom: 4px;
+        }
+
+        .avatar-info p {
+            color: #38bdf8;
+            font-size: 0.9rem;
+            margin: 0;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .profile-field {
+            margin-bottom: 20px;
+        }
+
+        .profile-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .profile-field strong {
+            display: block;
+            font-size: 0.8rem;
+            color: #38bdf8;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .profile-field span, .profile-field p {
+            color: #cbd5e1;
+            font-size: 1.05rem;
+        }
+
         .back-home-container {
-            max-width: 800px;
-            margin: 20px auto 40px auto;
+            margin-top: 20px;
             text-align: left;
         }
 
         .btn-menonjol {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
+            gap: 10px;
+            padding: 12px 26px;
             background: linear-gradient(135deg, #38bdf8, #0284c7);
             color: #0f172a;
             font-weight: bold;
             text-decoration: none;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
             transition: all 0.3s ease;
         }
 
         .btn-menonjol:hover {
             background: linear-gradient(135deg, #0ea5e9, #0369a1);
-            box-shadow: 0 6px 16px rgba(56, 189, 248, 0.6);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
             transform: translateY(-2px);
         }
     </style>
@@ -75,31 +204,45 @@
 
             <h2>PROFILE</h2>
 
-            <!-- Kotak Kartu Profil -->
+            <!-- Kotak Kartu Profil dengan Fitur Upload Foto -->
             <div class="profile-card">
-                <p>
+                <div class="profile-avatar-container">
+                    <!-- Bagian Foto Profil yang bisa diklik untuk ganti foto -->
+                    <div class="avatar-wrapper" id="avatarWrapper" title="Klik untuk mengganti foto profil">
+                        <div class="avatar-circle" id="avatarInitial">
+                            O
+                        </div>
+                        <div class="avatar-overlay">
+                            Ubah Foto
+                        </div>
+                    </div>
+                    <!-- Input file tersembunyi untuk memilih gambar -->
+                    <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+
+                    <div class="avatar-info">
+                        <h3 id="headerDisplayName">&nbsp;</h3>
+                        <p>Active Player • Project O Member</p>
+                        <span class="upload-hint">Klik lingkaran foto untuk mengunggah avatar baru</span>
+                    </div>
+                </div>
+
+                <div class="profile-field">
                     <strong>Username</strong>
-                </p>
-                <p id="username">
-                    Loading...
-                </p>
+                    <span id="username">Loading...</span>
+                </div>
 
-                <p>
+                <div class="profile-field">
                     <strong>Display Name</strong>
-                </p>
-                <p id="displayName">
-                    Loading...
-                </p>
+                    <span id="displayName">Loading...</span>
+                </div>
 
-                <p>
+                <div class="profile-field">
                     <strong>Email</strong>
-                </p>
-                <p id="email">
-                    Loading...
-                </p>
+                    <span id="email">Loading...</span>
+                </div>
             </div>
 
-            <!-- Tombol Kembali ke Beranda (Di Luar Kotak & Menonjol) -->
+            <!-- Tombol Kembali ke Beranda -->
             <div class="back-home-container">
                 <a href="index.html" class="btn-menonjol">
                     ← Kembali ke Beranda
@@ -110,10 +253,117 @@
     </main>
 
     <footer>
-        <p>© 2026 Project O</p>
+        <p>© 2026 Project O • Play • Think • Survive</p>
     </footer>
 
+    <!-- SCRIPT PROFILE JS BAWAAN -->
     <script src="profile.js"></script>
+    <script>
+        // Logika untuk menangani unggah foto profil ke Supabase Storage
+        window.addEventListener('DOMContentLoaded', () => {
+            const avatarWrapper = document.getElementById('avatarWrapper');
+            const avatarInput = document.getElementById('avatarInput');
+            const avatarInitialEl = document.getElementById('avatarInitial');
+            const displayNameEl = document.getElementById('displayName');
+            const headerName = document.getElementById('headerDisplayName');
+
+            // Saat area avatar diklik, buka dialog pilih file
+            avatarWrapper.addEventListener('click', () => {
+                avatarInput.click();
+            });
+
+            // Saat file gambar dipilih
+            avatarInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                try {
+                    avatarInitialEl.style.opacity = '0.5';
+                    
+                    // 1. Ambil data user yang sedang login
+                    const { data: { user } } = await supabaseClient.auth.getUser();
+                    if (!user) {
+                        alert('Silakan login ulang.');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+                    const filePath = `${fileName}`;
+
+                    // 2. Upload file ke Supabase Storage (pastikan bucket bernama 'avatars')
+                    const { error: uploadError } = await supabaseClient.storage
+                        .from('avatars')
+                        .upload(filePath, file);
+
+                    if (uploadError) {
+                        throw uploadError;
+                    }
+
+                    // 3. Dapatkan Public URL dari file yang diupload
+                    const { data: { publicUrl } } = supabaseClient.storage
+                        .from('avatars')
+                        .getPublicUrl(filePath);
+
+                    // 4. Simpan URL avatar ke tabel profil database (asumsi kolomnya 'avatar_url' atau simpan ke metadata)
+                    const { error: updateError } = await supabaseClient
+                        .from('profiles') // Ganti dengan nama tabel profil kamu jika berbeda
+                        .update({ avatar_url: publicUrl })
+                        .eq('id', user.id);
+
+                    // Tampilkan gambar di lingkaran avatar
+                    avatarInitialEl.style.backgroundImage = `url('${publicUrl}')`;
+                    avatarInitialEl.textContent = ''; // Hapus teks inisial jika ada foto
+                    avatarInitialEl.style.opacity = '1';
+                    
+                    alert('Foto profil berhasil diperbarui!');
+
+                } catch (error) {
+                    console.error('Gagal mengunggah foto:', error);
+                    alert('Gagal mengunggah foto: ' + (error.message || 'Terjadi kesalahan'));
+                    avatarInitialEl.style.opacity = '1';
+                }
+            });
+
+            // Sinkronisasi inisial teks dan cek apakah user sudah punya avatar tersimpan sebelumnya
+            const observer = new MutationObserver(async () => {
+                if (displayNameEl && displayNameEl.textContent.trim() !== 'Loading...') {
+                    const nameText = displayNameEl.textContent.trim();
+                    if (headerName) headerName.textContent = nameText;
+                    
+                    if (avatarInitialEl && !avatarInitialEl.style.backgroundImage) {
+                        if (nameText.length > 0) {
+                            avatarInitialEl.textContent = nameText.charAt(0).toUpperCase();
+                        }
+                    }
+
+                    // Cek apakah user sudah punya avatar_url tersimpan di database
+                    try {
+                        const { data: { user } } = await supabaseClient.auth.getUser();
+                        if (user) {
+                            const { data: profileData } = await supabaseClient
+                                .from('profiles')
+                                .select('avatar_url')
+                                .eq('id', user.id)
+                                .single();
+                            
+                            if (profileData && profileData.avatar_url) {
+                                avatarInitialEl.style.backgroundImage = `url('${profileData.avatar_url}')`;
+                                avatarInitialEl.textContent = '';
+                            }
+                        }
+                    } catch (e) {
+                        // Abaikan jika tabel profil belum memiliki kolom avatar_url
+                    }
+                }
+            });
+
+            if (displayNameEl) {
+                observer.observe(displayNameEl, { childList: true, characterData: true, subtree: true });
+            }
+        });
+    </script>
 
     <!-- SCRIPT UNTUK MENU HAMBURGER & LOGOUT -->
     <script>
@@ -121,13 +371,11 @@
         const menuDropdown = document.getElementById("menuDropdown");
         const logoutBtn = document.getElementById("logoutBtn");
 
-        // Buka / tutup menu
         menuToggle.addEventListener("click", function (event) {
             event.stopPropagation();
             menuDropdown.classList.toggle("show");
         });
 
-        // Logout
         logoutBtn.addEventListener("click", async function (event) {
             event.preventDefault();
             event.stopPropagation();
@@ -142,7 +390,6 @@
             window.location.href = "login.html";
         });
 
-        // Tutup menu jika klik di luar
         document.addEventListener("click", function (event) {
             if (
                 !menuToggle.contains(event.target) &&
