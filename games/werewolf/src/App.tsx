@@ -399,71 +399,96 @@ export default function App() {
 
         {/* Top Header */}
         <header className="flex flex-wrap justify-between items-center gap-4 mb-8 max-w-6xl mx-auto w-full bg-zinc-950/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-zinc-800 shadow-md">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-zinc-900 border border-blue-900/40 rounded-xl text-blue-400">
-              <PawPrint size={22} />
-            </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tight text-white flex items-center space-x-2">
-                <span>WEREWOLF</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              </h1>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-zinc-400">Desa Online Real-Time</span>
-                {profile.externalAccount && (
-                  <span className="text-[10px] bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded font-mono">
-                    Akun Web
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+  <div className="flex items-center space-x-3">
+    {/* Tombol Kembali ke Homepage / Beranda */}
+    <button
+      onClick={() => {
+        window.location.href = 'https://project-o-liard.vercel.app';
+      }}
+      className="flex items-center space-x-1.5 p-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white rounded-xl transition-colors cursor-pointer text-xs font-semibold"
+      title="Kembali ke Beranda Project O"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m12 19-7-7 7-7" />
+        <path d="M19 12H5" />
+      </svg>
+      <span>Beranda</span>
+    </button>
 
-          <div className="flex items-center flex-wrap gap-2.5">
-            {/* Player Level Badge */}
-            <button
-              onClick={() => setShowProfileModal(true)}
-              className="flex items-center space-x-3 bg-zinc-900 hover:bg-zinc-850 px-4 py-2 rounded-xl border border-zinc-800 hover:border-blue-900/50 transition-all text-left shadow-sm group cursor-pointer"
-            >
-              <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-blue-900/50 flex items-center justify-center text-blue-400 font-bold text-xs">
-                {levelInfo?.level}
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-semibold text-xs text-zinc-200 group-hover:text-white">
-                    {profile.username}
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded border border-blue-900/40 bg-zinc-950 text-blue-300">
-                    {levelInfo?.title}
-                  </span>
-                </div>
-                <div className="w-24 bg-zinc-800 h-1.5 rounded-full overflow-hidden mt-1">
-                  <div
-                    className="bg-blue-500 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${levelInfo?.progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-              <Trophy size={14} className="text-blue-400/80 ml-1" />
-            </button>
+    <div className="p-2.5 bg-zinc-900 border border-blue-900/40 rounded-xl text-blue-400">
+      <PawPrint size={22} />
+    </div>
+    <div>
+      <h1 className="text-xl font-black tracking-tight text-white flex items-center space-x-2">
+        <span>WEREWOLF</span>
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+      </h1>
+      <div className="flex items-center space-x-2">
+        <span className="text-xs text-zinc-400">Desa Online Real-Time</span>
+        {profile.externalAccount && (
+          <span className="text-[10px] bg-blue-950/60 text-blue-300 border border-blue-800/60 px-1.5 py-0.5 rounded font-mono">
+            Akun Web
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
 
-            {/* Quick Actions */}
-            <button
-              onClick={() => setShowGuideModal(true)}
-              className="p-2.5 bg-zinc-900 hover:bg-zinc-800 rounded-xl border border-zinc-800 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-              title="Panduan Cara Bermain"
-            >
-              <BookOpen size={16} />
-            </button>
-            <button
-              onClick={toggleSound}
-              className="p-2.5 bg-zinc-900 hover:bg-zinc-800 rounded-xl border border-zinc-800 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-              title={soundEnabled ? 'Matikan Suara' : 'Nyalakan Suara'}
-            >
-              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </button>
-          </div>
-        </header>
+  <div className="flex items-center flex-wrap gap-2.5">
+    {/* Player Level Badge */}
+    <button
+      onClick={() => setShowProfileModal(true)}
+      className="flex items-center space-x-3 bg-zinc-900 hover:bg-zinc-850 px-4 py-2 rounded-xl border border-zinc-800 hover:border-blue-900/50 transition-all text-left shadow-sm group cursor-pointer"
+    >
+      <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-blue-900/50 flex items-center justify-center text-blue-400 font-bold text-xs">
+        {levelInfo?.level}
+      </div>
+      <div>
+        <div className="flex items-center space-x-2">
+          <span className="font-semibold text-xs text-zinc-200 group-hover:text-white">
+            {profile.username}
+          </span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded border border-blue-900/40 bg-zinc-950 text-blue-300">
+            {levelInfo?.title}
+          </span>
+        </div>
+        <div className="w-24 bg-zinc-800 h-1.5 rounded-full overflow-hidden mt-1">
+          <div
+            className="bg-blue-500 h-full rounded-full transition-all duration-500"
+            style={{ width: `${levelInfo?.progressPercentage}%` }}
+          />
+        </div>
+      </div>
+      <Trophy size={14} className="text-blue-400/80 ml-1" />
+    </button>
+
+    {/* Quick Actions */}
+    <button
+      onClick={() => setShowGuideModal(true)}
+      className="p-2.5 bg-zinc-900 hover:bg-zinc-800 rounded-xl border border-zinc-800 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+      title="Panduan Cara Bermain"
+    >
+      <BookOpen size={16} />
+    </button>
+    <button
+      onClick={toggleSound}
+      className="p-2.5 bg-zinc-900 hover:bg-zinc-800 rounded-xl border border-zinc-800 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+      title={soundEnabled ? 'Matikan Suara' : 'Nyalakan Suara'}
+    >
+      {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+    </button>
+  </div>
+</header>
 
         {/* Global Toast Error / Banner */}
         {error && (
