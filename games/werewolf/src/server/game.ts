@@ -1,12 +1,10 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { Role, GamePhase, GameWinner, Player, ChatMessage, GameRoom, UserProfile, MatchRecord, RoomSettings } from '../shared/types.js';
+import { Role, GamePhase, GameWinner, OptionalRole, Player, ChatMessage, GameRoom, UserProfile, MatchRecord, RoomSettings } from '../shared/types.js';
 import { calculateLevelFromStats } from '../shared/leveling.js';
 
 const rooms = new Map<string, GameRoom>();
 const userProfiles = new Map<string, UserProfile>();
-const JESTER_ASSIGNMENT_CHANCE = 0.25;
-
 const BOT_NAMES = ['Budi (AI)', 'Siti (AI)', 'Doni (AI)', 'Maya (AI)', 'Rian (AI)', 'Dewi (AI)', 'Agus (AI)', 'Putri (AI)'];
 const BOT_SUSPICION_LINES = [
   'Malam tadi menegangkan sekali, siapa ya kira-kira pelakunya?',
@@ -190,7 +188,8 @@ export function initGameServer(io: Server) {
         timerEnabled: data.settings?.timerEnabled !== undefined ? data.settings.timerEnabled : true,
         discussionTime: data.settings?.discussionTime || 60,
         votingTime: data.settings?.votingTime || 30,
-        nightTime: data.settings?.nightTime || 30
+        nightTime: data.settings?.nightTime || 30,
+        selectedRoles: normalizeSelectedRoles(data.settings?.selectedRoles ?? ['Seer', 'Doctor'])
       };
 
       const est = calculateEstimatedMinutes(1, defaultSettings, 0);
@@ -366,7 +365,11 @@ export function initGameServer(io: Server) {
         return;
       }
 
-      assignRoles(room.players);
+      if (!assignRoles(room.players, room.settings.selectedRoles)) {
+        const roleCount = 1 + room.settings.selectedRoles.length;
+        socket.emit('error', `Komposisi role membutuhkan minimal ${roleCount} pemain. Tambahkan pemain atau kurangi pilihan role spesial.`);
+        return;
+      }
       room.phase = 'NIGHT';
       room.dayCount = 1;
       room.nightActions = { werewolfVotes: {} };
@@ -542,31 +545,24 @@ export function initGameServer(io: Server) {
   });
 }
 
-export function assignRoles(players: Player[]) {
+function normalizeSelectedRoles(roles: OptionalRole[] | undefined): OptionalRole[] {
+  if (!Array.isArray(roles)) return [];
+  return [...new Set(roles.filter((role): role is OptionalRole =>
+    role === 'Seer' || role === 'Doctor' || role === 'Jester'
+  ))];
+}
+
+export function assignRoles(players: Player[], selectedRoles: OptionalRole[] = []): boolean {
   const count = players.length;
-  let pool: Role[] = [];
+  const werewolfCount = count >= 6 ? 2 : 1;
+  const optionalRoles = normalizeSelectedRoles(selectedRoles);
+  if (werewolfCount + optionalRoles.length > count) return false;
 
-  if (count === 3) {
-    pool = ['Werewolf', 'Seer', 'Villager'];
-  } else if (count === 4) {
-    pool = ['Werewolf', 'Seer', 'Doctor', 'Villager'];
-  } else if (count === 5) {
-    pool = ['Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager'];
-  } else if (count === 6) {
-    pool = ['Werewolf', 'Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager'];
-  } else if (count === 7) {
-    pool = ['Werewolf', 'Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager', 'Villager'];
-  } else {
-    pool = ['Werewolf', 'Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager', 'Villager', 'Villager'];
-    while (pool.length < count) {
-      pool.push('Villager');
-    }
-  }
-
-  if (count >= 5 && Math.random() < JESTER_ASSIGNMENT_CHANCE) {
-    const villagerIndex = pool.lastIndexOf('Villager');
-    if (villagerIndex !== -1) pool[villagerIndex] = 'Jester';
-  }
+  const pool: Role[] = [
+    ...Array<Role>(werewolfCount).fill('Werewolf'),
+    ...optionalRoles
+  ];
+  while (pool.length < count) pool.push('Villager');
 
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -577,6 +573,7 @@ export function assignRoles(players: Player[]) {
     p.role = pool[idx];
     p.isAlive = true;
   });
+  return true;
 }
 
 function checkNightEnd(io: Server, room: GameRoom) {

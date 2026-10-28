@@ -1,4 +1,5 @@
 export type Role = 'Villager' | 'Werewolf' | 'Seer' | 'Doctor' | 'Jester';
+export type OptionalRole = Extract<Role, 'Seer' | 'Doctor' | 'Jester'>;
 export type GameWinner = 'Villagers' | 'Werewolves' | 'Jester';
 export type GamePhase = 'LOBBY' | 'NIGHT' | 'DAY_DISCUSSION' | 'DAY_VOTING' | 'ENDED';
 
@@ -63,6 +64,7 @@ export interface RoomSettings {
   discussionTime: number; // in seconds (e.g. 30, 45, 60, 90, 120)
   votingTime: number;     // in seconds (e.g. 20, 30, 45)
   nightTime: number;      // in seconds (e.g. 20, 30, 45)
+  selectedRoles: OptionalRole[];
 }
 
 export interface GameRoom {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { GameRoom, UserProfile } from './shared/types';
+import { GameRoom, OptionalRole, UserProfile } from './shared/types';
 import { calculateLevelFromStats } from './shared/leveling';
 import { soundFx } from './utils/audio';
 import {
@@ -46,6 +46,7 @@ export default function App() {
   const [customDiscussionTime, setCustomDiscussionTime] = useState<number>(60);
   const [customVotingTime, setCustomVotingTime] = useState<number>(30);
   const [customNightTime, setCustomNightTime] = useState<number>(30);
+  const [selectedRoles, setSelectedRoles] = useState<OptionalRole[]>([]);
 
   // In-Game state
   const [chatMessage, setChatMessage] = useState('');
@@ -194,7 +195,8 @@ export default function App() {
       timerEnabled,
       discussionTime: customDiscussionTime,
       votingTime: customVotingTime,
-      nightTime: customNightTime
+      nightTime: customNightTime,
+      selectedRoles
     }
   }, (res: any) => {
     console.log('Respon dari server Railway:', res);
@@ -206,6 +208,12 @@ export default function App() {
     }
   });
 };
+
+  const toggleSelectedRole = (role: OptionalRole) => {
+    setSelectedRoles(current =>
+      current.includes(role) ? current.filter(selected => selected !== role) : [...current, role]
+    );
+  };
 
   const handleSaveSettings = () => {
     if (!room) return;
@@ -543,27 +551,42 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Roles Badge Pills with Authentic Icons */}
-              <div className="flex flex-wrap gap-2 mb-8 text-xs">
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <PawPrint size={13} className="text-blue-400" /> <span>Werewolf</span>
-                </span>
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <Eye size={13} className="text-blue-400" /> <span>Seer (Peramal)</span>
-                </span>
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <HeartPulse size={13} className="text-blue-400" /> <span>Dokter (Tabib)</span>
-                </span>
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <Users size={13} className="text-blue-400" /> <span>Warga Desa</span>
-                </span>
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <Sparkles size={13} className="text-amber-400" /> <span>Jester (Netral)</span>
-                </span>
-              </div>
-              <p className="text-[11px] text-zinc-500 -mt-5 mb-6">
-                Jester dapat dibagikan secara acak pada permainan dengan minimal 5 pemain.
-              </p>
+              <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                <h3 className="mb-1 text-xs font-bold text-white">Pilih Role untuk Permainan</h3>
+                <p className="mb-3 text-[11px] leading-relaxed text-zinc-400">
+                  Werewolf selalu ada dan Villager mengisi slot tersisa. Setiap role spesial yang dipilih dijamin masuk satu pemain.
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-300">
+                    <PawPrint size={14} className="text-blue-400" />
+                    <span>Werewolf <span className="text-zinc-500">(wajib)</span></span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-300">
+                    <Users size={14} className="text-blue-400" />
+                    <span>Villager <span className="text-zinc-500">(pengisi slot)</span></span>
+                  </div>
+                  {([
+                    { role: 'Seer', label: 'Seer (Peramal)', Icon: Eye },
+                    { role: 'Doctor', label: 'Doctor (Tabib)', Icon: HeartPulse },
+                    { role: 'Jester', label: 'Jester (Netral)', Icon: Sparkles }
+                  ] as const).map(({ role, label, Icon }) => (
+                    <label key={role} className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-200 hover:border-blue-500/60">
+                      <input
+                        type="checkbox"
+                        checked={selectedRoles.includes(role)}
+                        onChange={() => toggleSelectedRole(role)}
+                        className="accent-blue-500"
+                      />
+                      <Icon size={14} className={role === 'Jester' ? 'text-amber-400' : 'text-blue-400'} />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-3 text-[11px] text-zinc-500">
+                  Dipilih: {selectedRoles.length ? selectedRoles.join(', ') : 'hanya role wajib dan Villager'}.
+                  {selectedRoles.includes('Jester') && ' Jester akan selalu diberikan jika permainan berhasil dimulai.'}
+                </p>
+              </section>
             </div>
 
             {/* Room Creation & Join Controls */}

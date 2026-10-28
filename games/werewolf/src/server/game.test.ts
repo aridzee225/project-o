@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { Server } from 'socket.io';
 import {
   assignRoles,
@@ -22,7 +22,7 @@ function createVotingRoom(players: Player[], votes: Record<string, string>): Gam
     nightActions: { werewolfVotes: {} },
     chatHistory: [],
     winner: null,
-    settings: { timerEnabled: true, discussionTime: 60, votingTime: 30, nightTime: 30 },
+    settings: { timerEnabled: true, discussionTime: 60, votingTime: 30, nightTime: 30, selectedRoles: [] },
     timerSecondsRemaining: 30,
     estimatedMinutesTotal: 5,
     estimatedMinutesRemaining: 5
@@ -36,7 +36,7 @@ describe('Werewolf Game Logic', () => {
       { id: '2', socketId: 's2', name: 'B', role: null, isAlive: true },
       { id: '3', socketId: 's3', name: 'C', role: null, isAlive: true }
     ];
-    assignRoles(players);
+    assignRoles(players, ['Seer']);
     const roles = players.map(p => p.role);
     expect(roles.includes('Werewolf')).toBe(true);
     expect(roles.includes('Seer')).toBe(true);
@@ -47,25 +47,40 @@ describe('Werewolf Game Logic', () => {
     const players: Player[] = Array.from({ length: 8 }).map((_, i) => ({
       id: String(i), socketId: `s${i}`, name: `P${i}`, role: null, isAlive: true
     }));
-    assignRoles(players);
+    assignRoles(players, ['Seer', 'Doctor', 'Jester']);
     const werewolves = players.filter(p => p.role === 'Werewolf');
     expect(werewolves.length).toBe(2);
   });
 
-  it('can randomly assign Jester in games with at least 5 players without changing the player count', () => {
+  it('does not assign special roles unless the host selected them', () => {
+    const players: Player[] = Array.from({ length: 8 }).map((_, i) => ({
+      id: String(i), socketId: `s${i}`, name: `P${i}`, role: null, isAlive: true
+    }));
+
+    expect(assignRoles(players, [])).toBe(true);
+    expect(players.every(player => player.role === 'Werewolf' || player.role === 'Villager')).toBe(true);
+  });
+
+  it('always assigns the selected roles without changing the player count', () => {
     const players: Player[] = Array.from({ length: 5 }).map((_, i) => ({
       id: String(i), socketId: `s${i}`, name: `P${i}`, role: null, isAlive: true
     }));
-    const random = vi.spyOn(Math, 'random').mockReturnValue(0);
+    const assigned = assignRoles(players, ['Seer', 'Doctor', 'Jester']);
 
-    try {
-      assignRoles(players);
-    } finally {
-      random.mockRestore();
-    }
-
+    expect(assigned).toBe(true);
     expect(players.filter(player => player.role === 'Jester')).toHaveLength(1);
+    expect(players.filter(player => player.role === 'Seer')).toHaveLength(1);
+    expect(players.filter(player => player.role === 'Doctor')).toHaveLength(1);
     expect(players).toHaveLength(5);
+  });
+
+  it('rejects selected roles when there are not enough player slots', () => {
+    const players: Player[] = Array.from({ length: 3 }).map((_, i) => ({
+      id: String(i), socketId: `s${i}`, name: `P${i}`, role: null, isAlive: true
+    }));
+
+    expect(assignRoles(players, ['Seer', 'Doctor', 'Jester'])).toBe(false);
+    expect(players.every(player => player.role === null)).toBe(true);
   });
 
   it('awards Jester only when the Jester is actually executed by the day vote', () => {
@@ -212,7 +227,8 @@ describe('Werewolf Game Logic', () => {
       timerEnabled: true,
       discussionTime: 60,
       votingTime: 30,
-      nightTime: 30
+      nightTime: 30,
+      selectedRoles: []
     };
     // 6 players -> ~3 cycles * 120s = 360s = 6 minutes
     const est = calculateEstimatedMinutes(6, settings, 0);
