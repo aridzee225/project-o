@@ -51,7 +51,7 @@ export default function App() {
   // In-Game state
   const [chatMessage, setChatMessage] = useState('');
   const [seerResult, setSeerResult] = useState<{ targetId: string; targetName: string; role: string } | null>(null);
-  const [publicRooms, setPublicRooms] = useState<Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean }>>([]);
+  const [publicRooms, setPublicRooms] = useState<Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean; selectedRoles: OptionalRole[] }>>([]);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const prevPhaseRef = useRef<string | null>(null);
@@ -652,7 +652,16 @@ export default function App() {
                         <div className="flex items-center space-x-2 text-[11px] text-zinc-400 font-mono mt-0.5">
                           <span>{r.id}</span>
                           <span>•</span>
-                          <span className="text-blue-400">{r.timerEnabled ? `~${r.estimatedMinutes || 6}m` : 'Manual'}</span>
+                          <span className="text-blue-400">{r.timerEnabled ? `Estimasi ~${r.estimatedMinutes} menit` : 'Tanpa batas waktu'}</span>
+                        </div>
+                        <div className="mt-1 text-[10px] text-zinc-500">
+                          Role dipilih: {r.selectedRoles.length
+                            ? r.selectedRoles.map(role => ({
+                              Seer: 'Seer (Peramal)',
+                              Doctor: 'Doctor (Tabib)',
+                              Jester: 'Jester (Netral)'
+                            })[role]).join(', ')
+                            : 'tidak ada role spesial'}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">

@@ -166,14 +166,15 @@ export function initGameServer(io: Server) {
       callback(profile || null);
     });
 
-    socket.on('get_rooms', (callback: (roomsList: Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean }>) => void) => {
+    socket.on('get_rooms', (callback: (roomsList: Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean; selectedRoles: OptionalRole[] }>) => void) => {
       const list = Array.from(rooms.values()).map(r => ({
         id: r.id,
         name: r.name,
         playersCount: r.players.length,
         phase: r.phase,
         estimatedMinutes: r.estimatedMinutesTotal,
-        timerEnabled: r.settings.timerEnabled
+        timerEnabled: r.settings.timerEnabled,
+        selectedRoles: [...r.settings.selectedRoles]
       }));
       callback(list);
     });
