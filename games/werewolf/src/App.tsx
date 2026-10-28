@@ -51,7 +51,7 @@ export default function App() {
   // In-Game state
   const [chatMessage, setChatMessage] = useState('');
   const [seerResult, setSeerResult] = useState<{ targetId: string; targetName: string; role: string } | null>(null);
-  const [publicRooms, setPublicRooms] = useState<Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean; selectedRoles: OptionalRole[] }>>([]);
+  const [publicRooms, setPublicRooms] = useState<Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean; selectedRoles?: OptionalRole[] }>>([]);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const prevPhaseRef = useRef<string | null>(null);
@@ -559,16 +559,16 @@ export default function App() {
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-300">
                     <PawPrint size={14} className="text-blue-400" />
-                    <span>Werewolf <span className="text-zinc-500">(wajib)</span></span>
+                    <span>Werewolf</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-300">
                     <Users size={14} className="text-blue-400" />
-                    <span>Villager <span className="text-zinc-500">(pengisi slot)</span></span>
+                    <span>Villager</span>
                   </div>
                   {([
-                    { role: 'Seer', label: 'Seer (Peramal)', Icon: Eye },
-                    { role: 'Doctor', label: 'Doctor (Tabib)', Icon: HeartPulse },
-                    { role: 'Jester', label: 'Jester (Netral)', Icon: Sparkles }
+                    { role: 'Seer', label: 'Seer', Icon: Eye },
+                    { role: 'Doctor', label: 'Doctor', Icon: HeartPulse },
+                    { role: 'Jester', label: 'Jester', Icon: Sparkles }
                   ] as const).map(({ role, label, Icon }) => (
                     <label key={role} className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-200 hover:border-blue-500/60">
                       <input
@@ -655,12 +655,8 @@ export default function App() {
                           <span className="text-blue-400">{r.timerEnabled ? `Estimasi ~${r.estimatedMinutes} menit` : 'Tanpa batas waktu'}</span>
                         </div>
                         <div className="mt-1 text-[10px] text-zinc-500">
-                          Role dipilih: {r.selectedRoles.length
-                            ? r.selectedRoles.map(role => ({
-                              Seer: 'Seer (Peramal)',
-                              Doctor: 'Doctor (Tabib)',
-                              Jester: 'Jester (Netral)'
-                            })[role]).join(', ')
+                          Role dipilih: {r.selectedRoles?.length
+                            ? r.selectedRoles.join(', ')
                             : 'tidak ada role spesial'}
                         </div>
                       </div>
@@ -785,7 +781,7 @@ export default function App() {
                   <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Users size={16} className="text-blue-400" />
-                      <span className="font-semibold text-zinc-200">Warga (Villager)</span>
+                      <span className="font-semibold text-zinc-200">Villager</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold text-white">{profile.roleStats.Villager.wins}W / {profile.roleStats.Villager.losses}L</span>
@@ -796,7 +792,7 @@ export default function App() {
                   <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Eye size={16} className="text-blue-400" />
-                      <span className="font-semibold text-zinc-200">Seer (Peramal)</span>
+                      <span className="font-semibold text-zinc-200">Seer</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold text-white">{profile.roleStats.Seer.wins}W / {profile.roleStats.Seer.losses}L</span>
@@ -807,7 +803,7 @@ export default function App() {
                   <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <HeartPulse size={16} className="text-blue-400" />
-                      <span className="font-semibold text-zinc-200">Dokter (Tabib)</span>
+                      <span className="font-semibold text-zinc-200">Doctor</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold text-white">{profile.roleStats.Doctor.wins}W / {profile.roleStats.Doctor.losses}L</span>
@@ -1090,6 +1086,35 @@ export default function App() {
               </div>
             )}
           </div>
+
+          <section className="mb-4 rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 shrink-0">
+            <div className="mb-3">
+              <h3 className="text-xs font-bold text-white">Keterangan Role</h3>
+              <p className="mt-1 text-[10px] text-zinc-500">Keterangan umum role, bukan informasi role pemain lain.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <PawPrint size={14} className="mt-0.5 shrink-0 text-blue-400" />
+                <div><strong className="text-zinc-200">Werewolf</strong><p className="mt-0.5 text-zinc-400">Memilih satu pemain untuk dieliminasi pada malam hari.</p></div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <Users size={14} className="mt-0.5 shrink-0 text-zinc-400" />
+                <div><strong className="text-zinc-200">Villager</strong><p className="mt-0.5 text-zinc-400">Berdiskusi dan memilih pemain yang dicurigai pada siang hari.</p></div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <Eye size={14} className="mt-0.5 shrink-0 text-blue-400" />
+                <div><strong className="text-zinc-200">Seer</strong><p className="mt-0.5 text-zinc-400">Memeriksa identitas satu pemain setiap malam.</p></div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <HeartPulse size={14} className="mt-0.5 shrink-0 text-emerald-400" />
+                <div><strong className="text-zinc-200">Doctor</strong><p className="mt-0.5 text-zinc-400">Melindungi satu pemain dari serangan pada malam hari.</p></div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <Sparkles size={14} className="mt-0.5 shrink-0 text-amber-400" />
+                <div><strong className="text-zinc-200">Jester</strong><p className="mt-0.5 text-zinc-400">Menang jika dieliminasi melalui voting siang.</p></div>
+              </div>
+            </div>
+          </section>
 
           {/* Seer Private Result Banner */}
           {seerResult && room.phase === 'NIGHT' && myRole === 'Seer' && (
