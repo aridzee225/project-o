@@ -1187,7 +1187,7 @@ export default function App() {
                     )}
 
                     {/* Seer Knowledge */}
-                    {seerKnowledge && (
+                    {myRole === 'Seer' && seerKnowledge && (
                       <div className="mt-2 text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 border border-blue-900/50 text-blue-300">
                         Hasil: {seerKnowledge.isWerewolf ? 'Serigala 🐺' : 'Warga Baik 🌾'}
                       </div>

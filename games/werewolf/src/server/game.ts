@@ -884,32 +884,37 @@ function triggerBotDayVotes(io: Server, room: GameRoom) {
   });
 }
 
+export function sanitizeRoomForViewer(room: GameRoom, viewer: Player): GameRoom {
+  const sanitizedRoom = JSON.parse(JSON.stringify(room)) as GameRoom;
+  const isViewerDead = !viewer.isAlive;
+  const isViewerWW = viewer.role === 'Werewolf';
+
+  sanitizedRoom.players.forEach(sp => {
+    if (room.phase !== 'ENDED' && !isViewerDead && sp.id !== viewer.id) {
+      if (!(isViewerWW && sp.role === 'Werewolf')) {
+        sp.role = null;
+      }
+    }
+  });
+
+  sanitizedRoom.chatHistory = sanitizedRoom.chatHistory.filter(c => {
+    if (c.system) return true;
+    if (c.isDeadChat && viewer.isAlive && room.phase !== 'ENDED') return false;
+    if (c.isWerewolfChat && viewer.role !== 'Werewolf' && room.phase !== 'ENDED') return false;
+    return true;
+  });
+
+  if (viewer.role !== 'Seer') {
+    sanitizedRoom.seerInspections = undefined;
+    sanitizedRoom.nightActions.seerTarget = undefined;
+  }
+
+  return sanitizedRoom;
+}
+
 function broadcastRoomState(io: Server, room: GameRoom) {
   room.players.forEach(p => {
     if (p.isBot) return;
-
-    const sanitizedRoom = JSON.parse(JSON.stringify(room)) as GameRoom;
-    const viewer = room.players.find(x => x.id === p.id);
-    const isViewerDead = viewer && !viewer.isAlive;
-    const isViewerWW = viewer && viewer.role === 'Werewolf';
-
-    sanitizedRoom.players.forEach(sp => {
-      if (room.phase !== 'ENDED' && !isViewerDead) {
-        if (sp.id !== p.id) {
-          if (!(isViewerWW && sp.role === 'Werewolf')) {
-            sp.role = null;
-          }
-        }
-      }
-    });
-
-    sanitizedRoom.chatHistory = sanitizedRoom.chatHistory.filter(c => {
-      if (c.system) return true;
-      if (c.isDeadChat && viewer && viewer.isAlive && room.phase !== 'ENDED') return false;
-      if (c.isWerewolfChat && viewer && viewer.role !== 'Werewolf' && room.phase !== 'ENDED') return false;
-      return true;
-    });
-
-    io.to(p.socketId).emit('room_state', sanitizedRoom);
+    io.to(p.socketId).emit('room_state', sanitizeRoomForViewer(room, p));
   });
 }

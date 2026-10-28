@@ -6,7 +6,8 @@ import {
   getOrCreateProfile,
   resolveDayVote,
   resolveNightPhase,
-  resolveVotingPhase
+  resolveVotingPhase,
+  sanitizeRoomForViewer
 } from './game';
 import { GameRoom, Player, RoomSettings } from '../shared/types';
 
@@ -30,6 +31,29 @@ function createVotingRoom(players: Player[], votes: Record<string, string>): Gam
 }
 
 describe('Werewolf Game Logic', () => {
+  it('only shares Seer inspection results with the Seer', () => {
+    const players: Player[] = [
+      { id: 'seer', socketId: 's1', name: 'Seer', role: 'Seer', isAlive: true },
+      { id: 'target', socketId: 's2', name: 'Target', role: 'Villager', isAlive: true },
+      { id: 'other', socketId: 's3', name: 'Other', role: 'Werewolf', isAlive: true }
+    ];
+    const room = createVotingRoom(players, {});
+    room.phase = 'NIGHT';
+    room.nightActions.seerTarget = 'target';
+    room.seerInspections = {
+      target: { targetName: 'Target', isWerewolf: false }
+    };
+
+    const seerRoom = sanitizeRoomForViewer(room, players[0]);
+    const otherRoom = sanitizeRoomForViewer(room, players[2]);
+
+    expect(seerRoom.seerInspections).toEqual(room.seerInspections);
+    expect(seerRoom.nightActions.seerTarget).toBe('target');
+    expect(otherRoom.seerInspections).toBeUndefined();
+    expect(otherRoom.nightActions.seerTarget).toBeUndefined();
+    expect(room.seerInspections).toEqual(seerRoom.seerInspections);
+  });
+
   it('should assign roles correctly for 3 players', () => {
     const players: Player[] = [
       { id: '1', socketId: 's1', name: 'A', role: null, isAlive: true },
