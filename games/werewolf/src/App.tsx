@@ -775,6 +775,17 @@ export default function App() {
                       <span className="font-semibold text-white">{profile.roleStats.Doctor.wins}W / {profile.roleStats.Doctor.losses}L</span>
                     </div>
                   </div>
+
+                  {/* Jester */}
+                  <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles size={16} className="text-amber-400" />
+                      <span className="font-semibold text-zinc-200">Jester</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-semibold text-white">{profile.roleStats.Jester.wins}W / {profile.roleStats.Jester.losses}L</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -817,6 +828,10 @@ export default function App() {
                   <div className="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg flex items-center space-x-2">
                     <Users size={15} className="text-blue-400 shrink-0" />
                     <div><strong className="text-white">Villager (Warga):</strong> Berdiskusi dan melakukan pemungutan suara di siang hari.</div>
+                  </div>
+                  <div className="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg flex items-center space-x-2">
+                    <Sparkles size={15} className="text-amber-400 shrink-0" />
+                    <div><strong className="text-white">Jester:</strong> Role Neutral yang menang jika berhasil dieksekusi melalui voting siang. Jika dibunuh pada malam hari, Jester tidak menang.</div>
                   </div>
                 </div>
               </div>
@@ -971,7 +986,9 @@ export default function App() {
               {room.phase === 'ENDED' && (
                 room.winner === 'Villagers'
                   ? 'Kemenangan Tim Warga Desa!'
-                  : 'Kemenangan Kawanan Werewolf!'
+                  : room.winner === 'Jester'
+                    ? 'Kemenangan Jester! Berhasil dieksekusi melalui voting siang.'
+                    : 'Kemenangan Kawanan Werewolf!'
               )}
             </p>
 
@@ -1129,6 +1146,7 @@ export default function App() {
                         {p.role === 'Villager' && <Users size={12} className="text-zinc-400" />}
                         {p.role === 'Seer' && <Eye size={12} className="text-blue-400" />}
                         {p.role === 'Doctor' && <HeartPulse size={12} className="text-emerald-400" />}
+                        {p.role === 'Jester' && <Sparkles size={12} className="text-amber-400" />}
                         <span>{p.role}</span>
                       </div>
                     ) : (

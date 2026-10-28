@@ -1,10 +1,11 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { Role, GamePhase, Player, ChatMessage, GameRoom, UserProfile, MatchRecord, RoomSettings } from '../shared/types.js';
+import { Role, GamePhase, GameWinner, Player, ChatMessage, GameRoom, UserProfile, MatchRecord, RoomSettings } from '../shared/types.js';
 import { calculateLevelFromStats } from '../shared/leveling.js';
 
 const rooms = new Map<string, GameRoom>();
 const userProfiles = new Map<string, UserProfile>();
+const JESTER_ASSIGNMENT_CHANCE = 0.25;
 
 const BOT_NAMES = ['Budi (AI)', 'Siti (AI)', 'Doni (AI)', 'Maya (AI)', 'Rian (AI)', 'Dewi (AI)', 'Agus (AI)', 'Putri (AI)'];
 const BOT_SUSPICION_LINES = [
@@ -51,6 +52,7 @@ export function getOrCreateProfile(userId: string, username: string, isExternal:
         Villager: { wins: 0, losses: 0 },
         Seer: { wins: 0, losses: 0 },
         Doctor: { wins: 0, losses: 0 },
+        Jester: { wins: 0, losses: 0 },
       },
       matchHistory: []
     };
@@ -465,6 +467,9 @@ export function initGameServer(io: Server) {
       const player = room.players.find(p => p.id === socket.data.userId);
       if (!player || !player.isAlive) return;
 
+      const target = room.players.find(p => p.id === data.targetId);
+      if (!target || !target.isAlive) return;
+
       if (room.phase === 'DAY_DISCUSSION') {
         room.phase = 'DAY_VOTING';
         room.timerSecondsRemaining = room.settings.votingTime;
@@ -558,6 +563,11 @@ export function assignRoles(players: Player[]) {
     }
   }
 
+  if (count >= 5 && Math.random() < JESTER_ASSIGNMENT_CHANCE) {
+    const villagerIndex = pool.lastIndexOf('Villager');
+    if (villagerIndex !== -1) pool[villagerIndex] = 'Jester';
+  }
+
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -583,7 +593,7 @@ function checkNightEnd(io: Server, room: GameRoom) {
   }
 }
 
-function resolveNightPhase(io: Server, room: GameRoom) {
+export function resolveNightPhase(io: Server, room: GameRoom) {
   let deadPlayerId: string | null = null;
   const targetId = room.nightActions.werewolfTarget;
   const doctorTargetId = room.nightActions.doctorTarget;
@@ -593,15 +603,7 @@ function resolveNightPhase(io: Server, room: GameRoom) {
       deadPlayerId = null;
     } else {
       deadPlayerId = targetId;
-      const victim = room.players.find(p => p.id === targetId);
-      if (victim) {
-        victim.isAlive = false;
-        room.lastEliminated = {
-          name: victim.name,
-          role: victim.role,
-          phase: 'NIGHT'
-        };
-      }
+      eliminatePlayer(room, targetId, 'NIGHT');
     }
   }
 
@@ -642,37 +644,23 @@ function checkVoteEnd(io: Server, room: GameRoom) {
   }
 }
 
-function resolveVotingPhase(io: Server, room: GameRoom) {
-  const voteCounts: Record<string, number> = {};
-  Object.values(room.votes).forEach(targetId => {
-    voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
-  });
+export function resolveVotingPhase(io: Server, room: GameRoom) {
+  if (room.phase !== 'DAY_VOTING' || room.winner !== null) return;
 
-  let maxVotes = 0;
-  let lynchedId: string | null = null;
-  let isTie = false;
+  const lynched = resolveDayVote(room);
 
-  for (const [targetId, count] of Object.entries(voteCounts)) {
-    if (count > maxVotes) {
-      maxVotes = count;
-      lynchedId = targetId;
-      isTie = false;
-    } else if (count === maxVotes) {
-      isTie = true;
-    }
+  if (lynched?.role === 'Jester') {
+    systemMessage(room, `⚖️ Hasil voting: ${lynched.name} (Role: Jester) dieksekusi warga.`);
+    room.phase = 'ENDED';
+    room.winner = 'Jester';
+    systemMessage(room, '🎭 KEMENANGAN JESTER! Jester berhasil dieksekusi melalui voting siang.');
+    updateAllPlayersStats(io, room, 'Jester');
+    broadcastRoomState(io, room);
+    return;
   }
 
-  if (lynchedId && !isTie && maxVotes > 0) {
-    const lynched = room.players.find(p => p.id === lynchedId);
-    if (lynched) {
-      lynched.isAlive = false;
-      room.lastEliminated = {
-        name: lynched.name,
-        role: lynched.role,
-        phase: 'DAY'
-      };
-      systemMessage(room, `⚖️ Hasil voting: Warga sepakat mengeliminasi ${lynched.name} (Role: ${lynched.role})!`);
-    }
+  if (lynched) {
+    systemMessage(room, `⚖️ Hasil voting: Warga sepakat mengeliminasi ${lynched.name} (Role: ${lynched.role})!`);
   } else {
     systemMessage(room, '⚖️ Suara berimbang atau tidak ada kesepakatan mayoritas. Tidak ada warga yang dieksekusi hari ini.');
   }
@@ -694,6 +682,53 @@ function resolveVotingPhase(io: Server, room: GameRoom) {
   } else {
     broadcastRoomState(io, room);
   }
+}
+
+export function resolveDayVote(room: GameRoom): Player | null {
+  if (room.phase !== 'DAY_VOTING' || room.winner !== null) return null;
+
+  const voteCounts: Record<string, number> = {};
+  Object.entries(room.votes).forEach(([voterId, targetId]) => {
+    const voter = room.players.find(player => player.id === voterId && player.isAlive);
+    const target = room.players.find(player => player.id === targetId && player.isAlive);
+    if (!voter || !target) return;
+    voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
+  });
+
+  let maxVotes = 0;
+  let lynchedId: string | null = null;
+  let isTie = false;
+
+  for (const [targetId, count] of Object.entries(voteCounts)) {
+    if (count > maxVotes) {
+      maxVotes = count;
+      lynchedId = targetId;
+      isTie = false;
+    } else if (count === maxVotes) {
+      isTie = true;
+    }
+  }
+
+  if (!lynchedId || isTie || maxVotes === 0) return null;
+  const executed = eliminatePlayer(room, lynchedId, 'DAY');
+  if (executed?.role === 'Jester') {
+    room.phase = 'ENDED';
+    room.winner = 'Jester';
+  }
+  return executed;
+}
+
+function eliminatePlayer(room: GameRoom, playerId: string, phase: 'NIGHT' | 'DAY'): Player | null {
+  const player = room.players.find(candidate => candidate.id === playerId && candidate.isAlive);
+  if (!player) return null;
+
+  player.isAlive = false;
+  room.lastEliminated = {
+    name: player.name,
+    role: player.role,
+    phase
+  };
+  return player;
 }
 
 function checkWinCondition(io: Server, room: GameRoom): boolean {
@@ -720,14 +755,16 @@ function checkWinCondition(io: Server, room: GameRoom): boolean {
   return false;
 }
 
-function updateAllPlayersStats(io: Server, room: GameRoom, winningSide: 'Villagers' | 'Werewolves') {
+function updateAllPlayersStats(io: Server, room: GameRoom, winningSide: GameWinner) {
   room.players.forEach(p => {
     if (p.isBot) return;
 
     const profile = getOrCreateProfile(p.id, p.name);
     const role = p.role || 'Villager';
     const isWW = role === 'Werewolf';
-    const playerWon = (winningSide === 'Werewolves' && isWW) || (winningSide === 'Villagers' && !isWW);
+    const playerWon = winningSide === 'Jester'
+      ? role === 'Jester'
+      : (winningSide === 'Werewolves' && isWW) || (winningSide === 'Villagers' && role !== 'Werewolf' && role !== 'Jester');
 
     profile.totalMatches++;
     if (playerWon) {

@@ -1,6 +1,33 @@
-import { describe, it, expect } from 'vitest';
-import { assignRoles, calculateEstimatedMinutes } from './game';
-import { Player, RoomSettings } from '../shared/types';
+import { describe, it, expect, vi } from 'vitest';
+import { Server } from 'socket.io';
+import {
+  assignRoles,
+  calculateEstimatedMinutes,
+  getOrCreateProfile,
+  resolveDayVote,
+  resolveNightPhase,
+  resolveVotingPhase
+} from './game';
+import { GameRoom, Player, RoomSettings } from '../shared/types';
+
+function createVotingRoom(players: Player[], votes: Record<string, string>): GameRoom {
+  return {
+    id: 'TEST',
+    name: 'Test Room',
+    hostId: players[0]?.id ?? '',
+    players,
+    phase: 'DAY_VOTING',
+    dayCount: 1,
+    votes,
+    nightActions: { werewolfVotes: {} },
+    chatHistory: [],
+    winner: null,
+    settings: { timerEnabled: true, discussionTime: 60, votingTime: 30, nightTime: 30 },
+    timerSecondsRemaining: 30,
+    estimatedMinutesTotal: 5,
+    estimatedMinutesRemaining: 5
+  };
+}
 
 describe('Werewolf Game Logic', () => {
   it('should assign roles correctly for 3 players', () => {
@@ -23,6 +50,161 @@ describe('Werewolf Game Logic', () => {
     assignRoles(players);
     const werewolves = players.filter(p => p.role === 'Werewolf');
     expect(werewolves.length).toBe(2);
+  });
+
+  it('can randomly assign Jester in games with at least 5 players without changing the player count', () => {
+    const players: Player[] = Array.from({ length: 5 }).map((_, i) => ({
+      id: String(i), socketId: `s${i}`, name: `P${i}`, role: null, isAlive: true
+    }));
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    try {
+      assignRoles(players);
+    } finally {
+      random.mockRestore();
+    }
+
+    expect(players.filter(player => player.role === 'Jester')).toHaveLength(1);
+    expect(players).toHaveLength(5);
+  });
+
+  it('awards Jester only when the Jester is actually executed by the day vote', () => {
+    const players: Player[] = [
+      { id: 'jester', socketId: 'sj', name: 'Jester', role: 'Jester', isAlive: true },
+      { id: 'wolf', socketId: 'sw', name: 'Wolf', role: 'Werewolf', isAlive: true },
+      { id: 'villager-1', socketId: 's1', name: 'Villager 1', role: 'Villager', isAlive: true },
+      { id: 'villager-2', socketId: 's2', name: 'Villager 2', role: 'Villager', isAlive: true }
+    ];
+    const room = createVotingRoom(players, {
+      wolf: 'jester',
+      'villager-1': 'jester',
+      'villager-2': 'wolf'
+    });
+
+    const executed = resolveDayVote(room);
+
+    expect(executed?.role).toBe('Jester');
+    expect(room.lastEliminated).toMatchObject({ name: 'Jester', role: 'Jester', phase: 'DAY' });
+    expect(room.phase).toBe('ENDED');
+    expect(room.winner).toBe('Jester');
+    expect(resolveDayVote(room)).toBeNull();
+  });
+
+  it('ends the game and updates Jester statistics exactly once after a day execution', () => {
+    const players: Player[] = [
+      { id: 'jester-winner', socketId: 'sj', name: 'Jester', role: 'Jester', isAlive: true },
+      { id: 'wolf', socketId: 'sw', name: 'Wolf', role: 'Werewolf', isAlive: true },
+      { id: 'villager-1', socketId: 's1', name: 'Villager 1', role: 'Villager', isAlive: true },
+      { id: 'villager-2', socketId: 's2', name: 'Villager 2', role: 'Villager', isAlive: true }
+    ];
+    const room = createVotingRoom(players, {
+      wolf: 'jester-winner',
+      'villager-1': 'jester-winner',
+      'villager-2': 'wolf'
+    });
+    const io = new Server();
+
+    resolveVotingPhase(io, room);
+    resolveVotingPhase(io, room);
+
+    expect(room.phase).toBe('ENDED');
+    expect(room.winner).toBe('Jester');
+    expect(getOrCreateProfile('jester-winner', 'Jester')).toMatchObject({
+      totalMatches: 1,
+      totalWins: 1,
+      roleStats: { Jester: { wins: 1, losses: 0 } },
+      matchHistory: [{ role: 'Jester', won: true, survived: false, daysLasted: 1 }]
+    });
+  });
+
+  it('does not award Jester for a night attack', () => {
+    const players: Player[] = [
+      { id: 'jester-night', socketId: 'sj', name: 'Jester', role: 'Jester', isAlive: true },
+      { id: 'wolf', socketId: 'sw', name: 'Wolf', role: 'Werewolf', isAlive: true },
+      { id: 'villager-1', socketId: 's1', name: 'Villager 1', role: 'Villager', isAlive: true },
+      { id: 'villager-2', socketId: 's2', name: 'Villager 2', role: 'Villager', isAlive: true }
+    ];
+    const room = createVotingRoom(players, {});
+    room.phase = 'NIGHT';
+    room.nightActions.werewolfTarget = 'jester-night';
+
+    resolveNightPhase(new Server(), room);
+
+    expect(room.players.find(player => player.id === 'jester-night')?.isAlive).toBe(false);
+    expect(room.lastEliminated).toMatchObject({ name: 'Jester', phase: 'NIGHT' });
+    expect(room.phase).toBe('DAY_DISCUSSION');
+    expect(room.winner).toBeNull();
+  });
+
+  it('does not award Jester on a tied vote', () => {
+    const players: Player[] = [
+      { id: 'jester', socketId: 'sj', name: 'Jester', role: 'Jester', isAlive: true },
+      { id: 'wolf', socketId: 'sw', name: 'Wolf', role: 'Werewolf', isAlive: true },
+      { id: 'villager-1', socketId: 's1', name: 'Villager 1', role: 'Villager', isAlive: true },
+      { id: 'villager-2', socketId: 's2', name: 'Villager 2', role: 'Villager', isAlive: true }
+    ];
+    const room = createVotingRoom(players, {
+      wolf: 'jester',
+      'villager-1': 'wolf'
+    });
+
+    expect(resolveDayVote(room)).toBeNull();
+    expect(room.players.find(player => player.id === 'jester')?.isAlive).toBe(true);
+    expect(room.phase).toBe('DAY_VOTING');
+    expect(room.winner).toBeNull();
+  });
+
+  it('does not allow votes from dead players or votes targeting dead players to execute Jester', () => {
+    const players: Player[] = [
+      { id: 'jester', socketId: 'sj', name: 'Jester', role: 'Jester', isAlive: true },
+      { id: 'wolf', socketId: 'sw', name: 'Wolf', role: 'Werewolf', isAlive: true },
+      { id: 'dead', socketId: 'sd', name: 'Dead', role: 'Villager', isAlive: false },
+      { id: 'villager', socketId: 'sv', name: 'Villager', role: 'Villager', isAlive: true }
+    ];
+    const room = createVotingRoom(players, {
+      wolf: 'jester',
+      dead: 'jester',
+      villager: 'wolf'
+    });
+
+    expect(resolveDayVote(room)).toBeNull();
+    expect(room.winner).toBeNull();
+    expect(room.players.find(player => player.id === 'jester')?.isAlive).toBe(true);
+  });
+
+  it('does not give a Jester a win when a different player is executed', () => {
+    const players: Player[] = [
+      { id: 'jester', socketId: 'sj', name: 'Jester', role: 'Jester', isAlive: true },
+      { id: 'wolf', socketId: 'sw', name: 'Wolf', role: 'Werewolf', isAlive: true },
+      { id: 'villager-1', socketId: 's1', name: 'Villager 1', role: 'Villager', isAlive: true },
+      { id: 'villager-2', socketId: 's2', name: 'Villager 2', role: 'Villager', isAlive: true }
+    ];
+    const room = createVotingRoom(players, {
+      wolf: 'villager-1',
+      'villager-1': 'villager-1',
+      'villager-2': 'jester'
+    });
+
+    expect(resolveDayVote(room)?.id).toBe('villager-1');
+    expect(room.winner).toBeNull();
+    expect(room.phase).toBe('DAY_VOTING');
+    expect(room.players.find(player => player.id === 'jester')?.isAlive).toBe(true);
+  });
+
+  it('keeps Jester on the existing faction win rules when a faction wins', () => {
+    const players: Player[] = [
+      { id: 'wolf-1', socketId: 'sw1', name: 'Wolf 1', role: 'Werewolf', isAlive: true },
+      { id: 'wolf-2', socketId: 'sw2', name: 'Wolf 2', role: 'Werewolf', isAlive: true },
+      { id: 'jester-faction', socketId: 'sj', name: 'Jester', role: 'Jester', isAlive: true },
+      { id: 'villager', socketId: 'sv', name: 'Villager', role: 'Villager', isAlive: true }
+    ];
+    const room = createVotingRoom(players, {});
+
+    resolveVotingPhase(new Server(), room);
+
+    expect(room.phase).toBe('ENDED');
+    expect(room.winner).toBe('Werewolves');
+    expect(getOrCreateProfile('jester-faction', 'Jester').roleStats.Jester).toEqual({ wins: 0, losses: 1 });
   });
 
   it('should calculate estimated game duration accurately based on custom settings', () => {

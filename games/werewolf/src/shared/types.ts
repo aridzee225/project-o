@@ -1,4 +1,5 @@
-export type Role = 'Villager' | 'Werewolf' | 'Seer' | 'Doctor';
+export type Role = 'Villager' | 'Werewolf' | 'Seer' | 'Doctor' | 'Jester';
+export type GameWinner = 'Villagers' | 'Werewolves' | 'Jester';
 export type GamePhase = 'LOBBY' | 'NIGHT' | 'DAY_DISCUSSION' | 'DAY_VOTING' | 'ENDED';
 
 export interface RoleStats {
@@ -32,6 +33,7 @@ export interface UserProfile {
     Villager: RoleStats;
     Seer: RoleStats;
     Doctor: RoleStats;
+    Jester: RoleStats;
   };
   matchHistory: MatchRecord[];
 }
@@ -79,7 +81,7 @@ export interface GameRoom {
   };
   seerInspections?: Record<string, { targetName: string; isWerewolf: boolean }>;
   chatHistory: ChatMessage[];
-  winner: 'Villagers' | 'Werewolves' | null;
+  winner: GameWinner | null;
   lastEliminated?: {
     name: string;
     role: Role | null;
