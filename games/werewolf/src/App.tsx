@@ -557,7 +557,13 @@ export default function App() {
                 <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
                   <Users size={13} className="text-blue-400" /> <span>Warga Desa</span>
                 </span>
+                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
+                  <Sparkles size={13} className="text-amber-400" /> <span>Jester (Netral)</span>
+                </span>
               </div>
+              <p className="text-[11px] text-zinc-500 -mt-5 mb-6">
+                Jester dapat dibagikan secara acak pada permainan dengan minimal 5 pemain.
+              </p>
             </div>
 
             {/* Room Creation & Join Controls */}
