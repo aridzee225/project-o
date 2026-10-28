@@ -1,11 +1,10 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { Role, GamePhase, Player, ChatMessage, GameRoom, UserProfile, MatchRecord, RoomSettings } from '../shared/types.js';
+import { Role, GamePhase, GameWinner, OptionalRole, Player, ChatMessage, GameRoom, UserProfile, MatchRecord, RoomSettings } from '../shared/types.js';
 import { calculateLevelFromStats } from '../shared/leveling.js';
 
 const rooms = new Map<string, GameRoom>();
 const userProfiles = new Map<string, UserProfile>();
-
 const BOT_NAMES = ['Budi (AI)', 'Siti (AI)', 'Doni (AI)', 'Maya (AI)', 'Rian (AI)', 'Dewi (AI)', 'Agus (AI)', 'Putri (AI)'];
 const BOT_SUSPICION_LINES = [
   'Malam tadi menegangkan sekali, siapa ya kira-kira pelakunya?',
@@ -51,6 +50,7 @@ export function getOrCreateProfile(userId: string, username: string, isExternal:
         Villager: { wins: 0, losses: 0 },
         Seer: { wins: 0, losses: 0 },
         Doctor: { wins: 0, losses: 0 },
+        Jester: { wins: 0, losses: 0 },
       },
       matchHistory: []
     };
@@ -166,14 +166,15 @@ export function initGameServer(io: Server) {
       callback(profile || null);
     });
 
-    socket.on('get_rooms', (callback: (roomsList: Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean }>) => void) => {
+    socket.on('get_rooms', (callback: (roomsList: Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean; selectedRoles: OptionalRole[] }>) => void) => {
       const list = Array.from(rooms.values()).map(r => ({
         id: r.id,
         name: r.name,
         playersCount: r.players.length,
         phase: r.phase,
         estimatedMinutes: r.estimatedMinutesTotal,
-        timerEnabled: r.settings.timerEnabled
+        timerEnabled: r.settings.timerEnabled,
+        selectedRoles: [...r.settings.selectedRoles]
       }));
       callback(list);
     });
@@ -188,7 +189,8 @@ export function initGameServer(io: Server) {
         timerEnabled: data.settings?.timerEnabled !== undefined ? data.settings.timerEnabled : true,
         discussionTime: data.settings?.discussionTime || 60,
         votingTime: data.settings?.votingTime || 30,
-        nightTime: data.settings?.nightTime || 30
+        nightTime: data.settings?.nightTime || 30,
+        selectedRoles: normalizeSelectedRoles(data.settings?.selectedRoles ?? ['Seer', 'Doctor'])
       };
 
       const est = calculateEstimatedMinutes(1, defaultSettings, 0);
@@ -364,7 +366,11 @@ export function initGameServer(io: Server) {
         return;
       }
 
-      assignRoles(room.players);
+      if (!assignRoles(room.players, room.settings.selectedRoles)) {
+        const roleCount = 1 + room.settings.selectedRoles.length;
+        socket.emit('error', `Komposisi role membutuhkan minimal ${roleCount} pemain. Tambahkan pemain atau kurangi pilihan role spesial.`);
+        return;
+      }
       room.phase = 'NIGHT';
       room.dayCount = 1;
       room.nightActions = { werewolfVotes: {} };
@@ -465,6 +471,9 @@ export function initGameServer(io: Server) {
       const player = room.players.find(p => p.id === socket.data.userId);
       if (!player || !player.isAlive) return;
 
+      const target = room.players.find(p => p.id === data.targetId);
+      if (!target || !target.isAlive) return;
+
       if (room.phase === 'DAY_DISCUSSION') {
         room.phase = 'DAY_VOTING';
         room.timerSecondsRemaining = room.settings.votingTime;
@@ -537,26 +546,24 @@ export function initGameServer(io: Server) {
   });
 }
 
-export function assignRoles(players: Player[]) {
-  const count = players.length;
-  let pool: Role[] = [];
+function normalizeSelectedRoles(roles: OptionalRole[] | undefined): OptionalRole[] {
+  if (!Array.isArray(roles)) return [];
+  return [...new Set(roles.filter((role): role is OptionalRole =>
+    role === 'Seer' || role === 'Doctor' || role === 'Jester'
+  ))];
+}
 
-  if (count === 3) {
-    pool = ['Werewolf', 'Seer', 'Villager'];
-  } else if (count === 4) {
-    pool = ['Werewolf', 'Seer', 'Doctor', 'Villager'];
-  } else if (count === 5) {
-    pool = ['Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager'];
-  } else if (count === 6) {
-    pool = ['Werewolf', 'Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager'];
-  } else if (count === 7) {
-    pool = ['Werewolf', 'Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager', 'Villager'];
-  } else {
-    pool = ['Werewolf', 'Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager', 'Villager', 'Villager'];
-    while (pool.length < count) {
-      pool.push('Villager');
-    }
-  }
+export function assignRoles(players: Player[], selectedRoles: OptionalRole[] = []): boolean {
+  const count = players.length;
+  const werewolfCount = count >= 6 ? 2 : 1;
+  const optionalRoles = normalizeSelectedRoles(selectedRoles);
+  if (werewolfCount + optionalRoles.length > count) return false;
+
+  const pool: Role[] = [
+    ...Array<Role>(werewolfCount).fill('Werewolf'),
+    ...optionalRoles
+  ];
+  while (pool.length < count) pool.push('Villager');
 
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -567,6 +574,7 @@ export function assignRoles(players: Player[]) {
     p.role = pool[idx];
     p.isAlive = true;
   });
+  return true;
 }
 
 function checkNightEnd(io: Server, room: GameRoom) {
@@ -583,7 +591,7 @@ function checkNightEnd(io: Server, room: GameRoom) {
   }
 }
 
-function resolveNightPhase(io: Server, room: GameRoom) {
+export function resolveNightPhase(io: Server, room: GameRoom) {
   let deadPlayerId: string | null = null;
   const targetId = room.nightActions.werewolfTarget;
   const doctorTargetId = room.nightActions.doctorTarget;
@@ -593,15 +601,7 @@ function resolveNightPhase(io: Server, room: GameRoom) {
       deadPlayerId = null;
     } else {
       deadPlayerId = targetId;
-      const victim = room.players.find(p => p.id === targetId);
-      if (victim) {
-        victim.isAlive = false;
-        room.lastEliminated = {
-          name: victim.name,
-          role: victim.role,
-          phase: 'NIGHT'
-        };
-      }
+      eliminatePlayer(room, targetId, 'NIGHT');
     }
   }
 
@@ -642,37 +642,23 @@ function checkVoteEnd(io: Server, room: GameRoom) {
   }
 }
 
-function resolveVotingPhase(io: Server, room: GameRoom) {
-  const voteCounts: Record<string, number> = {};
-  Object.values(room.votes).forEach(targetId => {
-    voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
-  });
+export function resolveVotingPhase(io: Server, room: GameRoom) {
+  if (room.phase !== 'DAY_VOTING' || room.winner !== null) return;
 
-  let maxVotes = 0;
-  let lynchedId: string | null = null;
-  let isTie = false;
+  const lynched = resolveDayVote(room);
 
-  for (const [targetId, count] of Object.entries(voteCounts)) {
-    if (count > maxVotes) {
-      maxVotes = count;
-      lynchedId = targetId;
-      isTie = false;
-    } else if (count === maxVotes) {
-      isTie = true;
-    }
+  if (lynched?.role === 'Jester') {
+    systemMessage(room, `⚖️ Hasil voting: ${lynched.name} (Role: Jester) dieksekusi warga.`);
+    room.phase = 'ENDED';
+    room.winner = 'Jester';
+    systemMessage(room, '🎭 KEMENANGAN JESTER! Jester berhasil dieksekusi melalui voting siang.');
+    updateAllPlayersStats(io, room, 'Jester');
+    broadcastRoomState(io, room);
+    return;
   }
 
-  if (lynchedId && !isTie && maxVotes > 0) {
-    const lynched = room.players.find(p => p.id === lynchedId);
-    if (lynched) {
-      lynched.isAlive = false;
-      room.lastEliminated = {
-        name: lynched.name,
-        role: lynched.role,
-        phase: 'DAY'
-      };
-      systemMessage(room, `⚖️ Hasil voting: Warga sepakat mengeliminasi ${lynched.name} (Role: ${lynched.role})!`);
-    }
+  if (lynched) {
+    systemMessage(room, `⚖️ Hasil voting: Warga sepakat mengeliminasi ${lynched.name} (Role: ${lynched.role})!`);
   } else {
     systemMessage(room, '⚖️ Suara berimbang atau tidak ada kesepakatan mayoritas. Tidak ada warga yang dieksekusi hari ini.');
   }
@@ -694,6 +680,53 @@ function resolveVotingPhase(io: Server, room: GameRoom) {
   } else {
     broadcastRoomState(io, room);
   }
+}
+
+export function resolveDayVote(room: GameRoom): Player | null {
+  if (room.phase !== 'DAY_VOTING' || room.winner !== null) return null;
+
+  const voteCounts: Record<string, number> = {};
+  Object.entries(room.votes).forEach(([voterId, targetId]) => {
+    const voter = room.players.find(player => player.id === voterId && player.isAlive);
+    const target = room.players.find(player => player.id === targetId && player.isAlive);
+    if (!voter || !target) return;
+    voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
+  });
+
+  let maxVotes = 0;
+  let lynchedId: string | null = null;
+  let isTie = false;
+
+  for (const [targetId, count] of Object.entries(voteCounts)) {
+    if (count > maxVotes) {
+      maxVotes = count;
+      lynchedId = targetId;
+      isTie = false;
+    } else if (count === maxVotes) {
+      isTie = true;
+    }
+  }
+
+  if (!lynchedId || isTie || maxVotes === 0) return null;
+  const executed = eliminatePlayer(room, lynchedId, 'DAY');
+  if (executed?.role === 'Jester') {
+    room.phase = 'ENDED';
+    room.winner = 'Jester';
+  }
+  return executed;
+}
+
+function eliminatePlayer(room: GameRoom, playerId: string, phase: 'NIGHT' | 'DAY'): Player | null {
+  const player = room.players.find(candidate => candidate.id === playerId && candidate.isAlive);
+  if (!player) return null;
+
+  player.isAlive = false;
+  room.lastEliminated = {
+    name: player.name,
+    role: player.role,
+    phase
+  };
+  return player;
 }
 
 function checkWinCondition(io: Server, room: GameRoom): boolean {
@@ -720,14 +753,16 @@ function checkWinCondition(io: Server, room: GameRoom): boolean {
   return false;
 }
 
-function updateAllPlayersStats(io: Server, room: GameRoom, winningSide: 'Villagers' | 'Werewolves') {
+function updateAllPlayersStats(io: Server, room: GameRoom, winningSide: GameWinner) {
   room.players.forEach(p => {
     if (p.isBot) return;
 
     const profile = getOrCreateProfile(p.id, p.name);
     const role = p.role || 'Villager';
     const isWW = role === 'Werewolf';
-    const playerWon = (winningSide === 'Werewolves' && isWW) || (winningSide === 'Villagers' && !isWW);
+    const playerWon = winningSide === 'Jester'
+      ? role === 'Jester'
+      : (winningSide === 'Werewolves' && isWW) || (winningSide === 'Villagers' && role !== 'Werewolf' && role !== 'Jester');
 
     profile.totalMatches++;
     if (playerWon) {
@@ -850,32 +885,37 @@ function triggerBotDayVotes(io: Server, room: GameRoom) {
   });
 }
 
+export function sanitizeRoomForViewer(room: GameRoom, viewer: Player): GameRoom {
+  const sanitizedRoom = JSON.parse(JSON.stringify(room)) as GameRoom;
+  const isViewerDead = !viewer.isAlive;
+  const isViewerWW = viewer.role === 'Werewolf';
+
+  sanitizedRoom.players.forEach(sp => {
+    if (room.phase !== 'ENDED' && !isViewerDead && sp.id !== viewer.id) {
+      if (!(isViewerWW && sp.role === 'Werewolf')) {
+        sp.role = null;
+      }
+    }
+  });
+
+  sanitizedRoom.chatHistory = sanitizedRoom.chatHistory.filter(c => {
+    if (c.system) return true;
+    if (c.isDeadChat && viewer.isAlive && room.phase !== 'ENDED') return false;
+    if (c.isWerewolfChat && viewer.role !== 'Werewolf' && room.phase !== 'ENDED') return false;
+    return true;
+  });
+
+  if (viewer.role !== 'Seer') {
+    sanitizedRoom.seerInspections = undefined;
+    sanitizedRoom.nightActions.seerTarget = undefined;
+  }
+
+  return sanitizedRoom;
+}
+
 function broadcastRoomState(io: Server, room: GameRoom) {
   room.players.forEach(p => {
     if (p.isBot) return;
-
-    const sanitizedRoom = JSON.parse(JSON.stringify(room)) as GameRoom;
-    const viewer = room.players.find(x => x.id === p.id);
-    const isViewerDead = viewer && !viewer.isAlive;
-    const isViewerWW = viewer && viewer.role === 'Werewolf';
-
-    sanitizedRoom.players.forEach(sp => {
-      if (room.phase !== 'ENDED' && !isViewerDead) {
-        if (sp.id !== p.id) {
-          if (!(isViewerWW && sp.role === 'Werewolf')) {
-            sp.role = null;
-          }
-        }
-      }
-    });
-
-    sanitizedRoom.chatHistory = sanitizedRoom.chatHistory.filter(c => {
-      if (c.system) return true;
-      if (c.isDeadChat && viewer && viewer.isAlive && room.phase !== 'ENDED') return false;
-      if (c.isWerewolfChat && viewer && viewer.role !== 'Werewolf' && room.phase !== 'ENDED') return false;
-      return true;
-    });
-
-    io.to(p.socketId).emit('room_state', sanitizedRoom);
+    io.to(p.socketId).emit('room_state', sanitizeRoomForViewer(room, p));
   });
 }

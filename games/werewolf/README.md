@@ -30,5 +30,6 @@ Game ini mendukung integrasi otomatis nama akun dari website induk melalui dua c
 - **Custom Waktu Diskusi**: Host dapat mengatur durasi diskusi siang (30s, 45s, 60s, 90s, 120s), voting, dan malam.
 - **Kalkulasi Estimasi Beres Game**: Sistem menghitung estimasi menit selesai secara dinamis berdasarkan jumlah pemain dan durasi per siklus.
 - **Countdown Real-Time**: Timer berjalan otomatis detik demi detik dengan transisi fase otomatis ketika waktu habis.
-- **Level & Statistik Per Role**: Melacak rekor menang/kalah untuk Werewolf, Villager, Seer, dan Doctor, serta sistem Level & Rank.
+- **Komposisi Role Pilihan Host**: Saat membuat room, host dapat memilih Seer, Doctor, dan/atau Jester. Setiap role spesial yang dipilih dijamin diberikan tepat satu kali; Werewolf selalu ada dan slot lainnya menjadi Villager.
+- **Level & Statistik Per Role**: Melacak rekor menang/kalah untuk Werewolf, Villager, Seer, Doctor, dan Jester, serta sistem Level & Rank. Jester adalah role netral yang menang jika dieksekusi melalui voting siang.
 - **Bot AI Testing**: Host dapat menambahkan bot untuk menguji fungsionalitas seluruh role secara mandiri.

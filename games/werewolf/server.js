@@ -790,6 +790,10 @@ function broadcastRoomState(io, room) {
       if (c.isWerewolfChat && viewer && viewer.role !== "Werewolf" && room.phase !== "ENDED") return false;
       return true;
     });
+    if (viewer && viewer.role !== "Seer") {
+      sanitizedRoom.seerInspections = void 0;
+      sanitizedRoom.nightActions.seerTarget = void 0;
+    }
     io.to(p.socketId).emit("room_state", sanitizedRoom);
   });
 }

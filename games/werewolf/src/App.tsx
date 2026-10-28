@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { GameRoom, UserProfile } from './shared/types';
+import { GameRoom, OptionalRole, UserProfile } from './shared/types';
 import { calculateLevelFromStats } from './shared/leveling';
 import { soundFx } from './utils/audio';
 import {
@@ -46,11 +46,12 @@ export default function App() {
   const [customDiscussionTime, setCustomDiscussionTime] = useState<number>(60);
   const [customVotingTime, setCustomVotingTime] = useState<number>(30);
   const [customNightTime, setCustomNightTime] = useState<number>(30);
+  const [selectedRoles, setSelectedRoles] = useState<OptionalRole[]>([]);
 
   // In-Game state
   const [chatMessage, setChatMessage] = useState('');
   const [seerResult, setSeerResult] = useState<{ targetId: string; targetName: string; role: string } | null>(null);
-  const [publicRooms, setPublicRooms] = useState<Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean }>>([]);
+  const [publicRooms, setPublicRooms] = useState<Array<{ id: string; name: string; playersCount: number; phase: string; estimatedMinutes: number; timerEnabled: boolean; selectedRoles?: OptionalRole[] }>>([]);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const prevPhaseRef = useRef<string | null>(null);
@@ -194,7 +195,8 @@ export default function App() {
       timerEnabled,
       discussionTime: customDiscussionTime,
       votingTime: customVotingTime,
-      nightTime: customNightTime
+      nightTime: customNightTime,
+      selectedRoles
     }
   }, (res: any) => {
     console.log('Respon dari server Railway:', res);
@@ -206,6 +208,12 @@ export default function App() {
     }
   });
 };
+
+  const toggleSelectedRole = (role: OptionalRole) => {
+    setSelectedRoles(current =>
+      current.includes(role) ? current.filter(selected => selected !== role) : [...current, role]
+    );
+  };
 
   const handleSaveSettings = () => {
     if (!room) return;
@@ -543,21 +551,42 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Roles Badge Pills with Authentic Icons */}
-              <div className="flex flex-wrap gap-2 mb-8 text-xs">
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <PawPrint size={13} className="text-blue-400" /> <span>Werewolf</span>
-                </span>
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <Eye size={13} className="text-blue-400" /> <span>Seer (Peramal)</span>
-                </span>
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <HeartPulse size={13} className="text-blue-400" /> <span>Dokter (Tabib)</span>
-                </span>
-                <span className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-lg flex items-center space-x-1.5">
-                  <Users size={13} className="text-blue-400" /> <span>Warga Desa</span>
-                </span>
-              </div>
+              <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                <h3 className="mb-1 text-xs font-bold text-white">Pilih Role untuk Permainan</h3>
+                <p className="mb-3 text-[11px] leading-relaxed text-zinc-400">
+                  Werewolf selalu ada dan Villager mengisi slot tersisa. Setiap role spesial yang dipilih dijamin masuk satu pemain.
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-300">
+                    <PawPrint size={14} className="text-blue-400" />
+                    <span>Werewolf</span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-300">
+                    <Users size={14} className="text-blue-400" />
+                    <span>Villager</span>
+                  </div>
+                  {([
+                    { role: 'Seer', label: 'Seer', Icon: Eye },
+                    { role: 'Doctor', label: 'Doctor', Icon: HeartPulse },
+                    { role: 'Jester', label: 'Jester', Icon: Sparkles }
+                  ] as const).map(({ role, label, Icon }) => (
+                    <label key={role} className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-800 bg-black px-3 py-2 text-xs text-zinc-200 hover:border-blue-500/60">
+                      <input
+                        type="checkbox"
+                        checked={selectedRoles.includes(role)}
+                        onChange={() => toggleSelectedRole(role)}
+                        className="accent-blue-500"
+                      />
+                      <Icon size={14} className={role === 'Jester' ? 'text-amber-400' : 'text-blue-400'} />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-3 text-[11px] text-zinc-500">
+                  Dipilih: {selectedRoles.length ? selectedRoles.join(', ') : 'hanya role wajib dan Villager'}.
+                  {selectedRoles.includes('Jester') && ' Jester akan selalu diberikan jika permainan berhasil dimulai.'}
+                </p>
+              </section>
             </div>
 
             {/* Room Creation & Join Controls */}
@@ -623,7 +652,12 @@ export default function App() {
                         <div className="flex items-center space-x-2 text-[11px] text-zinc-400 font-mono mt-0.5">
                           <span>{r.id}</span>
                           <span>•</span>
-                          <span className="text-blue-400">{r.timerEnabled ? `~${r.estimatedMinutes || 6}m` : 'Manual'}</span>
+                          <span className="text-blue-400">{r.timerEnabled ? `Estimasi ~${r.estimatedMinutes} menit` : 'Tanpa batas waktu'}</span>
+                        </div>
+                        <div className="mt-1 text-[10px] text-zinc-500">
+                          Role dipilih: {r.selectedRoles?.length
+                            ? r.selectedRoles.join(', ')
+                            : 'tidak ada role spesial'}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -747,7 +781,7 @@ export default function App() {
                   <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Users size={16} className="text-blue-400" />
-                      <span className="font-semibold text-zinc-200">Warga (Villager)</span>
+                      <span className="font-semibold text-zinc-200">Villager</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold text-white">{profile.roleStats.Villager.wins}W / {profile.roleStats.Villager.losses}L</span>
@@ -758,7 +792,7 @@ export default function App() {
                   <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Eye size={16} className="text-blue-400" />
-                      <span className="font-semibold text-zinc-200">Seer (Peramal)</span>
+                      <span className="font-semibold text-zinc-200">Seer</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold text-white">{profile.roleStats.Seer.wins}W / {profile.roleStats.Seer.losses}L</span>
@@ -769,10 +803,21 @@ export default function App() {
                   <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <HeartPulse size={16} className="text-blue-400" />
-                      <span className="font-semibold text-zinc-200">Dokter (Tabib)</span>
+                      <span className="font-semibold text-zinc-200">Doctor</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold text-white">{profile.roleStats.Doctor.wins}W / {profile.roleStats.Doctor.losses}L</span>
+                    </div>
+                  </div>
+
+                  {/* Jester */}
+                  <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles size={16} className="text-amber-400" />
+                      <span className="font-semibold text-zinc-200">Jester</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-semibold text-white">{profile.roleStats.Jester.wins}W / {profile.roleStats.Jester.losses}L</span>
                     </div>
                   </div>
                 </div>
@@ -817,6 +862,10 @@ export default function App() {
                   <div className="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg flex items-center space-x-2">
                     <Users size={15} className="text-blue-400 shrink-0" />
                     <div><strong className="text-white">Villager (Warga):</strong> Berdiskusi dan melakukan pemungutan suara di siang hari.</div>
+                  </div>
+                  <div className="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg flex items-center space-x-2">
+                    <Sparkles size={15} className="text-amber-400 shrink-0" />
+                    <div><strong className="text-white">Jester:</strong> Role Neutral yang menang jika berhasil dieksekusi melalui voting siang. Jika dibunuh pada malam hari, Jester tidak menang.</div>
                   </div>
                 </div>
               </div>
@@ -971,7 +1020,9 @@ export default function App() {
               {room.phase === 'ENDED' && (
                 room.winner === 'Villagers'
                   ? 'Kemenangan Tim Warga Desa!'
-                  : 'Kemenangan Kawanan Werewolf!'
+                  : room.winner === 'Jester'
+                    ? 'Kemenangan Jester! Berhasil dieksekusi melalui voting siang.'
+                    : 'Kemenangan Kawanan Werewolf!'
               )}
             </p>
 
@@ -1035,6 +1086,35 @@ export default function App() {
               </div>
             )}
           </div>
+
+          <section className="mb-4 rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 shrink-0">
+            <div className="mb-3">
+              <h3 className="text-xs font-bold text-white">Keterangan Role</h3>
+              <p className="mt-1 text-[10px] text-zinc-500">Keterangan umum role, bukan informasi role pemain lain.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <PawPrint size={14} className="mt-0.5 shrink-0 text-blue-400" />
+                <div><strong className="text-zinc-200">Werewolf</strong><p className="mt-0.5 text-zinc-400">Memilih satu pemain untuk dieliminasi pada malam hari.</p></div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <Users size={14} className="mt-0.5 shrink-0 text-zinc-400" />
+                <div><strong className="text-zinc-200">Villager</strong><p className="mt-0.5 text-zinc-400">Berdiskusi dan memilih pemain yang dicurigai pada siang hari.</p></div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <Eye size={14} className="mt-0.5 shrink-0 text-blue-400" />
+                <div><strong className="text-zinc-200">Seer</strong><p className="mt-0.5 text-zinc-400">Memeriksa identitas satu pemain setiap malam.</p></div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <HeartPulse size={14} className="mt-0.5 shrink-0 text-emerald-400" />
+                <div><strong className="text-zinc-200">Doctor</strong><p className="mt-0.5 text-zinc-400">Melindungi satu pemain dari serangan pada malam hari.</p></div>
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-[11px]">
+                <Sparkles size={14} className="mt-0.5 shrink-0 text-amber-400" />
+                <div><strong className="text-zinc-200">Jester</strong><p className="mt-0.5 text-zinc-400">Menang jika dieliminasi melalui voting siang.</p></div>
+              </div>
+            </div>
+          </section>
 
           {/* Seer Private Result Banner */}
           {seerResult && room.phase === 'NIGHT' && myRole === 'Seer' && (
@@ -1129,6 +1209,7 @@ export default function App() {
                         {p.role === 'Villager' && <Users size={12} className="text-zinc-400" />}
                         {p.role === 'Seer' && <Eye size={12} className="text-blue-400" />}
                         {p.role === 'Doctor' && <HeartPulse size={12} className="text-emerald-400" />}
+                        {p.role === 'Jester' && <Sparkles size={12} className="text-amber-400" />}
                         <span>{p.role}</span>
                       </div>
                     ) : (
@@ -1140,7 +1221,7 @@ export default function App() {
                     )}
 
                     {/* Seer Knowledge */}
-                    {seerKnowledge && (
+                    {myRole === 'Seer' && seerKnowledge && (
                       <div className="mt-2 text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 border border-blue-900/50 text-blue-300">
                         Hasil: {seerKnowledge.isWerewolf ? 'Serigala 🐺' : 'Warga Baik 🌾'}
                       </div>
